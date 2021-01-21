@@ -23,13 +23,13 @@ graphics.off()
 windows(h=8,w=8, record=TRUE)
 
 ## set working directory
-#setwd("D:/Active_Projects/Substrate_Complexity/Data")
+setwd("D:/Active_Projects/Substrate_Complexity/Code")
 
 ## load data frame
 dat <- read.csv("SNI_subtidal_swath.csv", header = TRUE)
 
 ## load ordination (results of a previously run ordination, so one does not have to take large amounts of time to rerun analysis) 
-load("ord_22March2020.rda")
+load("ord_22March2020_noLOG.rda")
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -65,12 +65,12 @@ log_Comm <- log10(dat_Comm[,1:14]+1)
 #### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ### Non-Metric Multidimensional Scaling
 ## run NMDS 
-ord <- metaMDS(comm = log_Comm, distance="bray", k=2, min = 10, trymax=250, autotransform = F, 
+ord <- metaMDS(comm = dat_Comm, distance="bray", k=2, min = 10, trymax=250, autotransform = F, 
                #smin = .180, sratmax = 0.9999999,
                wascores = TRUE)
 
 ## save full ordination 
-save(ord, file = "ord_22March2020.rda")
+save(ord, file = "ord_22March2020_noLOG.rda")
 
 ## visualize stress, check plot, xy coordinates 
 stressplot(ord)
@@ -88,7 +88,7 @@ newdf<-droplevels(newdf)
 ## overlay correlation with log species  
 dist <- ord$dist
 ord.points <- postMDS(ord$points, dist)
-scores <- wascores(ord.points, log_Comm)     #Fall or no_SC
+scores <- wascores(ord.points, dat_Comm)     #Fall or no_SC
 scores
 
 ## add species labels
@@ -175,7 +175,7 @@ newdf$MidPt[newdf$PERIOD == "1"] <- "NA"
 newdf <- newdf[complete.cases(newdf),]
 
 ## save .csv with spreadsheet
-write.csv(newdf,'SNI_subtidal_swath_NMDS_coordinates.csv')
+write.csv(newdf,'SNI_subtidal_swath_NMDS_coordinates_noLOG.csv')
 #### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
