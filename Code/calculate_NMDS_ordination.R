@@ -1,14 +1,14 @@
-#### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+#### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## NON-METRIC MULTIDIMENSIONAL SCALING (NMDS) analyses for SNI subtidal data 
-## Zachary Randell; code updated 10 November 2020
-#### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## zhr; code updated 10 November 2020
+#### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
 
 
-#### startup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## clear Global Environment 
+#### startup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## clear Global Environment
 rm(list = ls())
 
 ## load packages (if packages not installed: install.packages("librarynamehere"))
@@ -23,20 +23,20 @@ graphics.off()
 windows(h=8,w=8, record=TRUE)
 
 ## set working directory
-setwd("D:/Active_Projects/Substrate_Complexity/Code")
+setwd("D:/OneDrive/Active_Projects/Substrate_Complexity/Data")
 
 ## load data frame
-dat <- read.csv("SNI_subtidal_swath.csv", header = TRUE)
+dat <- read.csv("SNI_SubtidalSwath_OriginalDataFile.csv", header = TRUE)
 
 ## load ordination (results of a previously run ordination, so one does not have to take large amounts of time to rerun analysis) 
-load("ord_22March2020_noLOG.rda")
-## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+load("ord_22March2020.rda")
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
 
 
-#### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ### Data prep 
 ## set site as factor and rename 
 dat$SITE <- factor(dat$SITE, levels=c("1", "2", "3", "4",
@@ -56,13 +56,13 @@ dat_Comm <- dat[,8:21]
 
 ## log transform 
 log_Comm <- log10(dat_Comm[,1:14]+1)
-#### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
 
 
-#### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ### Non-Metric Multidimensional Scaling
 ## run NMDS 
 ord <- metaMDS(comm = dat_Comm, distance="bray", k=2, min = 10, trymax=250, autotransform = F, 
@@ -100,13 +100,13 @@ text(ord, display = "species", col = "red")
 ord.fit <- envfit(ord, dat$RELIEF)      #Fall or no_SC
 plot(ord.fit)
 ord.fit
-#### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
 
 
-#### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #### Calculate distances between points in species space for velocity calculation 
 ## order data (and later repeated to confirm calculations proceeded properly)
 newdf <- newdf[order(newdf$PERIOD),]
@@ -127,13 +127,13 @@ newdf$DIST <- as.numeric(newdf$DIST)
 newdf$X_dist[2:n] <- (newdf$NMDS1[2:n] - newdf$NMDS1[1:n])
 newdf$X_dist[newdf$PERIOD == "1"] <- "NA"
 newdf$X_dist <- as.numeric(newdf$X_dist)
-#### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
 
 
-#### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ### Calculate days in-between sequential sample points for velocity calculation 
 ## convert date into R friendly format 
 newdf$date <- as.Date(newdf$date, "%m/%d/%Y")
@@ -151,13 +151,13 @@ newdf <- newdf %>%
 ## first convert days into character, and then into numeric 
 newdf$days <- as.character(newdf$date_diff)
 newdf$days <- as.numeric(newdf$days)
-#### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
 
 
-#### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ### Calculate Velocities of community shift and requisite spatial information 
 ## calculate Velocities by dividing 2-dimensional distances in ordination space by # of days between sampling 
 newdf$Vel <- (newdf$DIST/newdf$days)
@@ -175,8 +175,8 @@ newdf$MidPt[newdf$PERIOD == "1"] <- "NA"
 newdf <- newdf[complete.cases(newdf),]
 
 ## save .csv with spreadsheet
-write.csv(newdf,'SNI_subtidal_swath_NMDS_coordinates_noLOG.csv')
-#### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+write.csv(newdf,'SNI_subtidal_swath_NMDS_coordinates.csv')
+#### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
