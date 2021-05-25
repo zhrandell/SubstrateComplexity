@@ -1,0 +1,106 @@
+TRANSECT,SITE,RELIEF,REP
+10R,NavFac,10.1386037,1
+22R,NavFac,10.1386037,1
+32L,NavFac,10.26694045,1
+39R,NavFac,11.03696099,1
+45R,NavFac,12.4486653,1
+10L,West End Urchin,13.09,1
+22L,West End Urchin,13.09034908,1
+32R,West End Urchin,12.06365503,1
+39L,West End Urchin,15.86,1
+45L,West End Urchin,11.42197125,1
+10R,West End Kelp,11.03696099,1
+22R,West End Kelp,10.90862423,1
+32L,West End Kelp,13.34702259,1
+39R,West End Kelp,12.70533881,1
+45L,West End Kelp,13.86036961,1
+10R,West Dutch,16.94045175,1
+22L,West Dutch,19.25051335,1
+32L,West Dutch,24.64065708,1
+39L,West Dutch,17.45379877,1
+45L,West Dutch,15.40041068,1
+10R,East Dutch,13.21868583,1
+22R,East Dutch,17.32546201,1
+32L,East Dutch,14.24537988,1
+39R,East Dutch,14.63039014,1
+45R,East Dutch,12.32032854,1
+10R,Daytona,11.16529774,1
+22L,Daytona,15.40041068,1
+22R,Daytona,12.32032854,1
+32L,Daytona,13.47535934,1
+39L,Daytona,10.78028747,1
+10R,Sandy Cove,10.1386037,1
+22R,Sandy Cove,10.65195072,1
+32L,Sandy Cove,12.19199179,1
+39R,Sandy Cove,10.65195072,1
+45R,Sandy Cove,12.06365503,1
+10R,NavFac,10.0104,2
+22R,NavFac,10.0104,2
+32L,NavFac,10.0104,2
+39R,NavFac,10.92,2
+45R,NavFac,11.57,2
+10L,West End Urchin,10.66,2
+22L,West End Urchin,10.53,2
+32R,West End Urchin,10.0104,2
+39L,West End Urchin,14.05,2
+45L,West End Urchin,11.96,2
+10R,West End Kelp,10.66,2
+22R,West End Kelp,10.0104,2
+32L,West End Kelp,10.66,2
+39R,West End Kelp,10.0104,2
+45L,West End Kelp,11.7,2
+10R,West Dutch,15.86,2
+22L,West Dutch,15.86,2
+32L,West Dutch,23.79,2
+39L,West Dutch,13.39,2
+45L,West Dutch,15.47,2
+10R,East Dutch,12.61,2
+22R,East Dutch,16.9,2
+32L,East Dutch,13,2
+39R,East Dutch,16.9,2
+45R,East Dutch,10.0104,2
+10R,Daytona,10.4,2
+22L,Daytona,12.35,2
+22R,Daytona,10.0104,2
+32L,Daytona,13,2
+39L,Daytona,10.0104,2
+10R,Sandy Cove,10.0104,2
+22R,Sandy Cove,10.66,2
+32L,Sandy Cove,10.0104,2
+39R,Sandy Cove,10.4,2
+45R,Sandy Cove,10.53,2
+10R,NavFac,10.14,3
+22R,NavFac,10.0104,3
+32L,NavFac,10.14,3
+39R,NavFac,11.7,3
+45R,NavFac,11.7,3
+10L,West End Urchin,12.35,3
+22L,West End Urchin,10.01,3
+32R,West End Urchin,12.61,3
+39L,West End Urchin,13.39,3
+45L,West End Urchin,10.27,3
+10R,West End Kelp,12.35,3
+22R,West End Kelp,10.14,3
+32L,West End Kelp,10.4,3
+39R,West End Kelp,11.7,3
+45L,West End Kelp,11.83,3
+10R,West Dutch,18.46,3
+22L,West Dutch,17.68,3
+32L,West Dutch,20.15,3
+39L,West Dutch,15.08,3
+45L,West Dutch,12.48,3
+10R,East Dutch,12.74,3
+22R,East Dutch,16.38,3
+32L,East Dutch,14.3,3
+39R,East Dutch,19.76,3
+45R,East Dutch,10.14,3
+10R,Daytona,10.27,3
+22L,Daytona,12.74,3
+22R,Daytona,10.14,3
+32L,Daytona,10.27,3
+39L,Daytona,10.0104,3
+10R,Sandy Cove,10.79,3
+22R,Sandy Cove,10.4,3
+32L,Sandy Cove,10.66,3
+39R,Sandy Cove,10.0104,3
+45R,Sandy Cove,10.92,3
