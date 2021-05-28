@@ -32,6 +32,16 @@ library(WaveletComp)
 
 setwd("D:/OneDrive/Active_Projects/Substrate_Complexity/Data")
 dat <- read.csv("SiteSpecificTemps.csv", header = TRUE)
+
+
+## set up custom ggplot theme 
+my.theme = theme(panel.grid.major = element_blank(), 
+                 panel.grid.minor = element_blank(),
+                 panel.background = element_blank(), 
+                 axis.line = element_line(colour = "black"),
+                 axis.title=element_text(size=16),
+                 axis.text=element_text(size=14),
+                 plot.title = element_text(size=16))
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -48,7 +58,7 @@ ED <- filter(dat, Site %in% c("EastDutch"))
 
 ## Plot ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 graphics.off()
-windows(w=24,h=12,record=TRUE)
+windows(w=12,h=6,record=TRUE)
 
 
 ## one site at a time 
@@ -66,6 +76,56 @@ print(p5)
 
 
 
+## KS tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## visualize frequency histograms 
+p6 <- ggplot(dat, aes(DegC, fill=Site)) +
+  geom_histogram(binwidth = 0.15, color="black") + 
+  my.theme +
+  xlab("Temperature, degrees Celcius") +
+  ggtitle("site specific frequency histograms for 2016-2019 temperature data")
+print(p6)
+
+
+
+## FINISH this code . . . transparent and overlapping histograms.
+p6 <- ggplot(NF, aes(DegC)) +
+  geom_histogram(binwidth = 0.15, color="black", aes(fill = "blue"), alpha=0.5) + 
+  geom_histogram(data=ED, binwidth=0.15, color="black", aes(fill="red"), alpha=0.5) +
+  geom_histogram(data=WE, binwidth=0.15, color="black", aes(fill="green"), alpha=0.5) +
+  geom_histogram(data=Day, binwidth=0.15, color="black", aes(fill="black"), alpha=0.5) +
+  my.theme +
+  xlab("Temperature, degrees Celcius") +
+  ggtitle("site specific frequency histograms for 2016-2019 temperature data") +
+  guides(fill=guide_legend(order=1))
+print(p6)
+
+
+
+
+
+
+## Degrees C as a numeric vector
+NF_num <- NF$DegC
+WE_num <- WE$DegC
+Day_num <- Day$DegC
+ED_num <- ED$DegC
+ED_num <- na.omit(ED_num)
+
+
+
+## perform KS tests 
+ks.test(NF_num, ED_num)
+ks.test(NF_num, WE_num)
+ks.test(NF_num, Day_num)
+ks.test(WE_num, ED_num)
+ks.test(WE_num, Day_num)
+ks.test(Day_num, ED_num)
+
+
+
+x <- rnorm(3000, mean = 0, sd = 2)
+y <- rnorm(3000, mean = 10, sd = 2)
+xy <- ks.test(x,y)
 
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## data frames for wavelet analysis
