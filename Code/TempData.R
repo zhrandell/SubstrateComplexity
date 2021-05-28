@@ -75,12 +75,11 @@ ED_temp <- as.data.frame(ED$DegC)
 Day_temp <- as.data.frame(Day$DegC)
 
 
+## there are 9 NAs in East Dutch (sensor issues?) remove them for wavelet 
 ED_temp <- na.omit(ED_temp)
 
 
-
 ## wavelet analysis 
-
 NF_wavelet = analyze.wavelet(NF_temp, loess.span = 0,
                              dt = 1, dj = 1/20,
                              lowerPeriod = 1,
@@ -111,10 +110,12 @@ Day_wavelet = analyze.wavelet(Day_temp, loess.span = 0,
 
 
 
-
+## visualize wavelet analysis 
 graphics.off()
-windows(w=24,h=12,record=TRUE)
+windows(w=12,h=8,record=TRUE)
 
+
+## unsure why par is not working here? 
 par(mfrow=c(2,2))
 
 
@@ -135,5 +136,29 @@ Daytona <- wt.image(Day_wavelet, main = "Daytona", color.key = "quantile", n.lev
 
 
 dev.off()
+## END wavelet analysis ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
+
+## auto-correlation and cross-correlation through time ~~~~~~~~~~~~~~~~~~~~~~~~~
+auto_cor <- acf(NF_temp, lag.max = 16000, 
+                main="auto-correlation within NavFac temp data", 
+                xlab="lag in units of 1 hr; purple line = 6 month lag, red line = 1 year lag",
+                ylab="auto-correlation")
+abline(v=8760, col="red")
+abline(v=4380, col="darkorchid")
+
+
+## cross-correlation through time between two time series 
+cross_cor <- ccf(NF_temp, ED_temp, type = "correlation", 
+                 lag.max = 16000,
+                 main="cross-correlation through time between NacFac and EastDutch temp data",
+                 xlab="lag in units of 1 hr; purple line = 6 month lag, red line = 1 year lag",
+                 ylab="cross-correlation")
+abline(v=8760, col="red")
+abline(v=4380, col="darkorchid")
+
 
 
