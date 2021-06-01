@@ -66,8 +66,9 @@ ED <- filter(dat, Site %in% c("EastDutch"))
 ## Plot ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## custom color pal matching ms site colors. NF, blend(WEU & WEK), Day, ED
 pal_sites <- c("#BE2625", "#E88600", "#608341", "#00536f") #BE2625 used for tint and shade creation
+pal_sites2 <- c("#BE2625", "#E88600", "#6f006b", "#00536f") #BE2625 used for tint and shade creation
 
-
+#6f006b
 ## graphing window
 graphics.off()
 windows(w=12,h=6,record=TRUE)
@@ -103,14 +104,35 @@ p6 <- ggplot(dat, aes(DegC, fill=Site)) +
 print(p6)
 
 
+p6 <- ggplot(dat, aes(DegC, fill=Site)) +
+  geom_density(binwidth = 0.15, color="black") + 
+  my.theme +
+  scale_fill_manual(values=pal_sites) +
+  xlab("Temperature, degrees Celcius") +
+  ggtitle("site specific frequency histograms for 2016-2019 temperature data") +
+  facet_wrap(~Site)
+print(p6)
+
+
+
 
 ## transparent and overlapping histograms.
 p6 <- ggplot(dat, aes(DegC, fill=Site)) +
-  geom_histogram(position="identity", binwidth = 0.15, color="black", alpha=0.75) + 
+  geom_histogram(position="identity", binwidth = 0.15, color="black", alpha=0.4) + 
   my.theme +
   scale_fill_manual(values=pal_sites) +
   xlab("Temperature, degrees Celcius") +
   ggtitle("overlapping histograms for 2016-2019 temperature data") +
+  guides(fill=guide_legend(order=1))
+print(p6)
+
+
+p6 <- ggplot(dat, aes(DegC, fill=Site)) +
+  geom_density(position="identity", binwidth = 0.15, color="black", alpha=0.3) + 
+  my.theme +
+  scale_fill_manual(values=pal_sites2) +
+  xlab("Temperature, degrees Celcius") +
+  ggtitle("overlapping kernal densities for 2016-2019 temperature data") +
   guides(fill=guide_legend(order=1))
 print(p6)
 
