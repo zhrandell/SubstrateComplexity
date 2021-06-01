@@ -48,6 +48,11 @@ my.theme = theme(panel.grid.major = element_blank(),
 
 
 
+## data formattting ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## reorder sites for plotting
+dat$Site <- factor(dat$Site, levels=c("NavFac", "WestEnd", "Daytona", "EastDutch"))
+                   
+
 ## subset by site
 NF <- filter(dat, Site %in% c("NavFac"))
 WE <- filter(dat, Site %in% c("WestEnd"))
@@ -56,7 +61,14 @@ ED <- filter(dat, Site %in% c("EastDutch"))
 
 
 
+
+
 ## Plot ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## custom color pal matching ms site colors. NF, blend(WEU & WEK), Day, ED
+pal_sites <- c("#BE2625", "#E88600", "#608341", "#00536f") #BE2625 used for tint and shade creation
+
+
+## graphing window
 graphics.off()
 windows(w=12,h=6,record=TRUE)
 
@@ -70,8 +82,11 @@ print(p1)
 ## all sites 
 p5 <- ggplot(dat, aes(DateTime, DegC, color=Site)) +
   geom_line() +
+  scale_colour_manual(values=pal_sites) +
   facet_wrap(~ Site)
 print(p5)
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 
 
@@ -81,26 +96,23 @@ print(p5)
 p6 <- ggplot(dat, aes(DegC, fill=Site)) +
   geom_histogram(binwidth = 0.15, color="black") + 
   my.theme +
-  xlab("Temperature, degrees Celcius") +
-  ggtitle("site specific frequency histograms for 2016-2019 temperature data")
-print(p6)
-
-
-
-## FINISH this code . . . transparent and overlapping histograms.
-p6 <- ggplot(NF, aes(DegC)) +
-  geom_histogram(binwidth = 0.15, color="black", aes(fill = "blue"), alpha=0.5) + 
-  geom_histogram(data=ED, binwidth=0.15, color="black", aes(fill="red"), alpha=0.5) +
-  geom_histogram(data=WE, binwidth=0.15, color="black", aes(fill="green"), alpha=0.5) +
-  geom_histogram(data=Day, binwidth=0.15, color="black", aes(fill="black"), alpha=0.5) +
-  my.theme +
+  scale_fill_manual(values=pal_sites) +
   xlab("Temperature, degrees Celcius") +
   ggtitle("site specific frequency histograms for 2016-2019 temperature data") +
-  guides(fill=guide_legend(order=1))
+  facet_wrap(~Site)
 print(p6)
 
 
 
+## transparent and overlapping histograms.
+p6 <- ggplot(dat, aes(DegC, fill=Site)) +
+  geom_histogram(position="identity", binwidth = 0.15, color="black", alpha=0.75) + 
+  my.theme +
+  scale_fill_manual(values=pal_sites) +
+  xlab("Temperature, degrees Celcius") +
+  ggtitle("overlapping histograms for 2016-2019 temperature data") +
+  guides(fill=guide_legend(order=1))
+print(p6)
 
 
 
@@ -122,12 +134,17 @@ ks.test(WE_num, Day_num)
 ks.test(Day_num, ED_num)
 
 
-
+## simulate minimally to get a sense of the behavior of D
 x <- rnorm(3000, mean = 0, sd = 2)
 y <- rnorm(3000, mean = 10, sd = 2)
 xy <- ks.test(x,y)
+## END KS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
+## wavelet analysis ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## data frames for wavelet analysis
 NF_temp <- as.data.frame(NF$DegC)
 WE_temp <- as.data.frame(WE$DegC)
