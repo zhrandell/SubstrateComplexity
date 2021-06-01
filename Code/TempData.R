@@ -51,13 +51,14 @@ my.theme = theme(panel.grid.major = element_blank(),
 ## data formattting ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## reorder sites for plotting
 dat$Site <- factor(dat$Site, levels=c("NavFac", "WestEnd", "Daytona", "EastDutch"))
-                   
+dat$logTemp <- log(dat$DegC)                   
 
 ## subset by site
 NF <- filter(dat, Site %in% c("NavFac"))
 WE <- filter(dat, Site %in% c("WestEnd"))
 Day <- filter(dat, Site %in% c("Daytona"))
 ED <- filter(dat, Site %in% c("EastDutch"))
+ED <- na.omit(ED)
 
 
 
@@ -258,6 +259,59 @@ cross_cor <- ccf(NF_temp, ED_temp, type = "correlation",
                  ylab="cross-correlation")
 abline(v=8760, col="red")
 abline(v=4380, col="darkorchid")
+
+
+
+
+
+
+## inverse ecdf plots
+## calcuate empirical cumulative density function and extract and sort values
+NF_ecdf <- data.frame(x=unique(NF$DegC), 
+                      y=ecdf(NF$DegC)(unique(NF$DegC))*length(NF$DegC))
+WE_ecdf <- data.frame(x=unique(WE$DegC), 
+                      y=ecdf(WE$DegC)(unique(WE$DegC))*length(WE$DegC))
+ED_ecdf <- data.frame(x=unique(ED$DegC), 
+                      y=ecdf(ED$DegC)(unique(ED$DegC))*length(ED$DegC))
+Day_ecdf <- data.frame(x=unique(Day$DegC), 
+                       y=ecdf(Day$DegC)(unique(Day$DegC))*length(Day$DegC))
+
+
+## rescale extracted cdf values to 0-1 scale
+NF_ecdf$y <- scale(NF_ecdf$y, center=min(NF_ecdf$y), scale=diff(range(NF_ecdf$y)))
+WE_ecdf$y <- scale(WE_ecdf$y, center=min(WE_ecdf$y), scale=diff(range(WE_ecdf$y)))
+ED_ecdf$y <- scale(ED_ecdf$y, center=min(ED_ecdf$y), scale=diff(range(ED_ecdf$y)))
+Day_ecdf$y <- scale(Day_ecdf$y, center=min(Day_ecdf$y), scale=diff(range(Day_ecdf$y)))
+
+
+## take the inverse of a cdf, such that the p(x) > or = log wave event
+NF_ecdf$inv_y <- ((NF_ecdf$y - max(NF_ecdf$y)) * (-1))
+WE_ecdf$inv_y <- ((WE_ecdf$y - max(WE_ecdf$y)) * (-1))
+ED_ecdf$inv_y <- ((ED_ecdf$y - max(ED_ecdf$y)) * (-1))
+Day_ecdf$inv_y <- ((Day_ecdf$y - max(Day_ecdf$y)) * (-1))
+
+
+## add site name to new data frames
+NF_ecdf$Site <- "NavFac"
+WE_ecdf$Site <- "WestEnd"
+ED_ecdf$Site <- "EastDutch"
+Day_ecdf$Site <- "Daytona"
+
+
+## combine cfd data frames into single df & and reorder sites in order to plot properly 
+dat_ecdf <- rbind(NF_ecdf, WE_ecdf, ED_ecdf, Day_ecdf)
+dat_ecdf$Site <- factor(dat_ecdf$Site, levels=c("NavFac", "WestEnd", "Daytona", "EastDutch"))
+pal_sites <- c("#BE2625", "#E88600", "#608341", "#00536f") #BE2625 used for tint and shade creation
+
+
+## plot all 
+p1 <- ggplot(dat_ecdf, aes(x, inv_y, color=Site)) + my.theme +
+  geom_line(lwd=1, alpha=.8) +
+  scale_color_manual(values=pal_sites) +
+  xlab("Water temperature (degrees Celcius)") + ylab("empirical probability") + 
+  ggtitle("probability of water temperature being equal to or warmer than the corresponding (x-axis) temp")
+
+print(p1)
 
 
 

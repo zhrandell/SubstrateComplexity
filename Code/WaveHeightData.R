@@ -69,8 +69,7 @@ NF <- filter(dat, Site %in% c("NavFac"))
 WE <- filter(dat, Site %in% c("WestEnd"))
 Day <- filter(dat, Site %in% c("Daytona"))
 ED <- filter(dat, Site %in% c("EastDutch"))
-
-
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
@@ -138,7 +137,7 @@ p7 <- ggplot(dat, aes(logWV, fill=Site)) +
   geom_density(position="identity", color="black", alpha=0.3) + 
   my.theme +
   scale_fill_manual(values=pal_sites) +
-  xlab("Wave height (meters)") +
+  xlab("Wave height (log meters)") +
   ggtitle("overlapping kernal densities for one year of wave height data") +
   guides(fill=guide_legend(order=1))
 print(p7)
