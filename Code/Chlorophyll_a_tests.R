@@ -19,6 +19,7 @@ library("rasterVis")  # raster visualisation
 library("maptools")
 library("rgeos")
 library("dismo")
+library("sf")
 
 setwd("D:/OneDrive/Active_Projects/Substrate_Complexity/Data/Chlorophyll")
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -29,11 +30,13 @@ setwd("D:/OneDrive/Active_Projects/Substrate_Complexity/Data/Chlorophyll")
 
 ## data configuration ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## loads netCDF file
-nc_data <- nc_open("T2015294191500.L2_LAC_OC.nc")
+#nc_data <- nc_open("T2015294191500.L2_LAC_OC.nc")
+#nc_data <- nc_open("grain1.nc")
+nc_data <- nc_open("grain2.nc")
 
 
 ## saves text file with metadata 
-{sink("T2015294191500.L2_LAC_OC_metadata.txt")
+{sink("grain2_metadata.txt")
   print(nc_data)
   sink()}
 
@@ -41,19 +44,22 @@ nc_data <- nc_open("T2015294191500.L2_LAC_OC.nc")
 ## call variables 
 ## chlorophyll a data 
 chlor <- ncvar_get(nc_data, "geophysical_data/chlor_a")
-dim(chlor)
+
+
+lat <- as.data.frame(ncvar_get(nc_data, "navigation_data/latitude"))
+long <- as.data.frame(ncvar_get(nc_data, "navigation_data/longitude")) 
 
 
 ## pull lat and long data to anchor the chlorophyll observations 
-slat <- as.data.frame(ncvar_get(nc_data, "scan_line_attributes/slat"))
-slon <- as.data.frame(ncvar_get(nc_data, "scan_line_attributes/slon"))
-elat <- as.data.frame(ncvar_get(nc_data, "scan_line_attributes/elat"))
-elon <- as.data.frame(ncvar_get(nc_data, "scan_line_attributes/elon"))
+#slat <- as.data.frame(ncvar_get(nc_data, "scan_line_attributes/slat"))
+#slon <- as.data.frame(ncvar_get(nc_data, "scan_line_attributes/slon"))
+#elat <- as.data.frame(ncvar_get(nc_data, "scan_line_attributes/elat"))
+#elon <- as.data.frame(ncvar_get(nc_data, "scan_line_attributes/elon"))
 
-dim(slat)
-dim(slon)
-dim(elat)
-dim(elon)
+#dim(slat)
+#dim(slon)
+#dim(elat)
+#dim(elon)
 
 
 ## close nc_data file 
@@ -66,50 +72,64 @@ nc_close(nc_data)
 
 ## plotting ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 graphics.off()
-windows(h=6,w=10, record=TRUE)
+windows(h=7,w=8, record=TRUE)
 
-cuts = c(seq(0,2, length=20))
-pal <- colorRampPalette(c("green","red"))
+
+## add map of coastlines 
+coastlines <- readOGR("ne-coastlines-10m/ne_10m_coastline.shp")
+#projection(coastlines) <- "+proj=longlat +datum=WGS84 +no_defs"
+plot(coastlines)
+coastlines
+
 
 
 ## this plots the entire "granule", a large region offshore of CA
 p1 <- raster(t(chlor), 
-            xmn=min(slon), xmx=max(elon), 
-            ymn=min(slat), ymx=max(elat), 
-            crs=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs+ towgs84=0,0,0"))
-
-plot(p1, breaks=cuts, col=pal(20))
+            xmn=min(long), xmx=max(long), 
+            ymn=min(lat), ymx=max(lat))
 
 
-## specify rectangular region 
+## coordinate system information 
+#crs=crs("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0"))
+## set crs
+#projection(p1) <- "+proj=longlat +datum=WGS84 +no_defs"
+crs(p1)
+
+
+## plot entire granule 
+plot(p1, zlim=c(0,1), main="entire granule (southern CA in far upper right corner)")
+plot(coastlines, add=TRUE)
+
+
+
+## specify rectangular region right around SNI 
 box1 <- as(extent(-119.9199, -119.0736, 32.9596, 33.5081), 'SpatialPolygons')
-crs(box1) <- "+proj=longlat +datum=WGS84 +no_defs"
+p2 <- crop(p1, box1)
+
+plot(p2)
+plot(coastlines, add=TRUE)
+crs(coastlines)
+
+## specify broader region offshore of southern CA
+box2 <- as(extent(-121.0, -117.0, 32.4, 38.0), 'SpatialPolygons')
+#projection(box2) <- "+proj=longlat +datum=WGS84 +no_defs"
+
+## exact box from NASA site
+box3 <- as(extent(-120.6162, -118.2973, 32.7248, 34.3512), 'SpatialPolygons')
+
+
 
 
 ## apply cutout to pa 
-p2 <- crop(p1, box1)
-plot(p2, breaks=cuts, col=pal(20))
+p3 <- crop(p1, box3)
+plot(p3, zlim=c(0,1), main="chlor_a data mismatch in coordinate system")
+plot(coastlines, add=TRUE)
 
 
- 
-#download.file("http://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/physical/ne_10m_coastline.zip", 
-#              destfile = 'coastlines.zip')
-#unzip(zipfile = "coastlines.zip", 
-#      exdir = 'ne-coastlines-10m')
 
-## add map of coastlines 
-coastlines <- readOGR("ne-coastlines-10m/ne_10m_coastline.shp")
-crs(coastlines) <- "+proj=longlat +datum=WGS84 +no_defs"
-plot(coastlines)
+p2
+crs(coastlines)
+crs(box2)
 
-
-## apply crop to coastline map to produce SNI image
-SNI <- crop(coastlines, box1)
-plot(SNI)
-
-
-## plot both chlorophyll a and SNI 
-plot(p2)
-plot(SNI, add=TRUE)
 
 ## END script (for now) ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
