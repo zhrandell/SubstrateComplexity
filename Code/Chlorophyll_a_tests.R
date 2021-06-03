@@ -22,6 +22,15 @@ library("dismo")
 library("sf")
 
 setwd("D:/OneDrive/Active_Projects/Substrate_Complexity/Data/Chlorophyll")
+
+## set up custom ggplot theme 
+my.theme = theme(panel.grid.major = element_blank(), 
+                 panel.grid.minor = element_blank(),
+                 panel.background = element_blank(), 
+                 axis.line = element_line(colour = "black"),
+                 axis.title=element_text(size=16),
+                 axis.text=element_text(size=14),
+                 plot.title = element_text(size=16))
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -80,7 +89,7 @@ coastlines <- readOGR("ne-coastlines-10m/ne_10m_coastline.shp")
 #projection(coastlines) <- "+proj=longlat +datum=WGS84 +no_defs"
 plot(coastlines)
 coastlines
-
+st_crs(coastlines)
 
 
 ## this plots the entire "granule", a large region offshore of CA
@@ -102,13 +111,53 @@ plot(coastlines, add=TRUE)
 
 
 
+## <- st_transform(coastlines, "+4326")
+## <- projectRaster(coastline, crs = "+init=EPSG:4326")
+
+
+
 ## specify rectangular region right around SNI 
 box1 <- as(extent(-119.9199, -119.0736, 32.9596, 33.5081), 'SpatialPolygons')
 p2 <- crop(p1, box1)
+extent(p2)
+extent(p1)
+
 
 plot(p2)
 plot(coastlines, add=TRUE)
 crs(coastlines)
+
+
+## USE THIS METHOD FOR EXTRACTED DATA FROM RASTERS 
+## create new extent (box / polygon to crop raster)
+new.extent <- extent(-119.9199, -119.0736, 32.9596, 33.5081)
+class(new.extent)
+
+
+## crop raster 
+p2 <- crop(x=p1, y=new.extent)
+plot(p2)
+
+
+## compare full and cropped raster 
+plot(p1)
+plot(p2, add=TRUE)
+
+
+## use spatial polygon specified by coordinates to extract data 
+d1 <- raster::extract(p1, new.extent)
+d1 <- as.data.frame(d1)
+
+
+## plot
+v1 <- ggplot(d1, aes(d1)) + my.theme +
+  geom_histogram(binwidth = .0025, color="black", fill="#388E8E") +
+  xlab("Chlorophyll_a mg / m^-3") 
+print(v1)
+
+
+
+
 
 ## specify broader region offshore of southern CA
 box2 <- as(extent(-121.0, -117.0, 32.4, 38.0), 'SpatialPolygons')
