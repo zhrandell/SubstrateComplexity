@@ -1,4 +1,4 @@
-File grain1.nc (NC_FORMAT_NETCDF4):
+File grain2.nc (NC_FORMAT_NETCDF4):
 
      47 variables (excluding dimension variables):
         int sensor_band_parameters/wavelength[number_of_bands]   (Chunking: [9])  (Compression: shuffle,level 4)
@@ -409,18 +409,18 @@ File grain1.nc (NC_FORMAT_NETCDF4):
 
     48 global attributes:
         title: MODIST Level-2 Data
-        product_name: T2015299175500.L2_LAC_OC.nc
+        product_name: T2015299193500.L2_LAC_OC.nc
         processing_version: 2018.0
-        equatorCrossingLongitude: -113.999374389648
-        orbit_number: 84337
-        history: l2gen par=/data4/sdpsoper/vdc/vpu11/workbuf/T2015299175500.L1B_LAC.param metafile=T2015299175500.L2_LAC_OC.nc.meta
+        equatorCrossingLongitude: -138.720993041992
+        orbit_number: 84338
+        history: l2gen par=/data3/sdpsoper/vdc/vpu2/workbuf/T2015299193500.L1B_LAC.param metafile=T2015299193500.L2_LAC_OC.nc.meta
         instrument: MODIS
         platform: Terra
         Conventions: CF-1.6 ACDD-1.3
         license: http://science.nasa.gov/earth-science/earth-science-data/data-information-policy/
         naming_authority: gov.nasa.gsfc.sci.oceandata
-        id: 2018.0/L2/T2015299175500.L2_LAC_OC.nc
-        date_created: 2018-04-04T14:29:33.000Z
+        id: 2018.0/L2/T2015299193500.L2_LAC_OC.nc
+        date_created: 2018-04-04T14:35:42.000Z
         keywords_vocabulary: NASA Global Change Master Directory (GCMD) Science Keywords
         keywords: Earth Science > Oceans > Ocean Optics > Ocean Color
         standard_name_vocabulary: CF Standard Name Table v36
@@ -434,25 +434,25 @@ File grain1.nc (NC_FORMAT_NETCDF4):
         publisher_email: data@oceancolor.gsfc.nasa.gov
         processing_level: L2
         cdm_data_type: swath
-        equatorCrossingDateTime: 2015-10-26T18:06:27.301Z
+        equatorCrossingDateTime: 2015-10-26T19:45:20.397Z
         spatialResolution: 1 km
-        time_coverage_start: 2015-10-26T17:55:01.158Z
-        time_coverage_end: 2015-10-26T17:59:59.541Z
-        start_center_longitude: -103.892486572266
-        start_center_latitude: 41.3749961853027
-        end_center_longitude: -108.834274291992
-        end_center_latitude: 23.3794059753418
-        northernmost_latitude: 42.5866775512695
-        southernmost_latitude: 21.3168811798096
-        easternmost_longitude: -90.7178192138672
-        westernmost_longitude: -120.215202331543
+        time_coverage_start: 2015-10-26T19:35:01.307Z
+        time_coverage_end: 2015-10-26T19:39:59.689Z
+        start_center_longitude: -129.861618041992
+        start_center_latitude: 37.3649635314941
+        end_center_longitude: -134.504104614258
+        end_center_latitude: 19.3349189758301
+        northernmost_latitude: 38.5783004760742
+        southernmost_latitude: 17.3884544372559
+        easternmost_longitude: -117.32396697998
+        westernmost_longitude: -145.555084228516
         geospatial_lat_units: degrees_north
         geospatial_lon_units: degrees_east
-        geospatial_lat_max: 42.5866775512695
-        geospatial_lat_min: 21.3168811798096
-        geospatial_lon_max: -90.7178192138672
-        geospatial_lon_min: -120.215202331543
+        geospatial_lat_max: 38.5783004760742
+        geospatial_lat_min: 17.3884544372559
+        geospatial_lon_max: -117.32396697998
+        geospatial_lon_min: -145.555084228516
         startDirection: Descending
         endDirection: Descending
         day_night_flag: Day
-        earth_sun_distance_correction: 1.01191592216492
+        earth_sun_distance_correction: 1.01195418834686
