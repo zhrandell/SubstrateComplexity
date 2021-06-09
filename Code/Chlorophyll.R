@@ -29,7 +29,7 @@ library("gdalUtils")
 library("rgeos")
 library("lwgeom")
 
-setwd("D:/OneDrive/Active_Projects/Substrate_Complexity/Data/Chlorophyll")
+setwd("D:/OneDrive/Active_Projects/Substrate_Complexity/Data/Chlorophyll/automate")
 
 ## set up custom ggplot theme 
 my.theme = theme(panel.grid.major = element_blank(), 
@@ -49,12 +49,12 @@ windows(h=6.5,w=8, record=TRUE)
 
 
 ## open and plot netCDF file ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
-nc_data <- nc_open("grain3.nc")
+nc_data <- nc_open("grain4.nc")
 
 ## saves text file with metadata 
-{sink("grain3_metadata.txt")
-  print(nc_data)
-  sink()}
+#{sink("grain2_metadata.txt")
+#  print(nc_data)
+#  sink()}
 
 ## extract chlorophyll, latitude, and longitude information
 chlor <- ncvar_get(nc_data, "geophysical_data/chlor_a")
@@ -65,6 +65,7 @@ long <- ncvar_get(nc_data, "navigation_data/longitude")
 nc_close(nc_data)
 
 ## open coastline data
+setwd("D:/OneDrive/Active_Projects/Substrate_Complexity/Data/Chlorophyll")
 coastlines <- readOGR("ne-coastlines-10m/ne_10m_coastline.shp")
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -110,12 +111,15 @@ box3 <- as(extent(-119.8, -119.2, 33.05, 33.45), 'SpatialPolygons')
 ## apply cutout to chlor, lat long raster & coastline data  
 p1 <- crop(x, box3)
 SNI <- crop(coastlines, box3)
-plot(p1)
+
+plot(x, zlim=c(0,10))
 lines(SNI)
 
+plot(p1)
+
 ## MODIS implicit CRS -- explicitly set
-MODIS_crs <- "+proj=longlat +datum=WGS84 +no_defs" 
-crs(x) <- MODIS_crs
+#MODIS_crs <- "+proj=longlat +datum=WGS84 +no_defs" 
+#crs(x) <- MODIS_crs
 
 
 ## plot 
@@ -228,12 +232,13 @@ chlorophyll_dat <- rbind(sw_chlor, nw_chlor, ne_chlor, se_chlor)
 
 ## reorder factors into desired order for plot 
 chlorophyll_dat$region <- factor(chlorophyll_dat$region, levels=c("NorthWest", "NorthEast",
+                                                                  "SouthWest", "SouthEast"))
 ## END chlorophyll data extract ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~           
 
                                                        
 
 
-                                                                                                           "SouthWest", "SouthEast")) 
+                                                                                                           
 ## Plot ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
 graphics.off()
 windows(h=6,w=10, record=TRUE)
