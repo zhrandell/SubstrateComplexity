@@ -28,7 +28,7 @@ library(mclust, quietly=TRUE)
 library(pryr)
 library(ggbeeswarm)
 library(WaveletComp)
-
+library(magrittr)
 
 setwd("D:/OneDrive/Active_Projects/Substrate_Complexity/Data")
 dat <- read.csv("SiteSpecificTemps.csv", header = TRUE)
@@ -39,9 +39,15 @@ my.theme = theme(panel.grid.major = element_blank(),
                  panel.grid.minor = element_blank(),
                  panel.background = element_blank(), 
                  axis.line = element_line(colour = "black"),
-                 axis.title=element_text(size=16),
-                 axis.text=element_text(size=14),
-                 plot.title = element_text(size=16))
+                 axis.title = element_text(size=16),
+                 axis.text = element_text(size=14),
+                 plot.title = element_text(size=16), 
+                 legend.text = element_text(size=14), 
+                 legend.title = element_blank(), 
+                 legend.position = c(0.825, 0.85))
+
+graphics.off()
+windows(h=5,w=8, record=TRUE)
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -60,92 +66,76 @@ Day <- filter(dat, Site %in% c("Daytona"))
 ED <- filter(dat, Site %in% c("EastDutch"))
 ED <- na.omit(ED)
 
+## add SU to ease plotting the xaxis 
+NF$SU <- seq(from=1, to=length(NF$DegC), by=1)
+WE$SU <- seq(from=1, to=length(WE$DegC), by=1)
+Day$SU <- seq(from=1, to=length(Day$DegC), by=1)
+ED$SU <- seq(from=1, to=length(ED$DegC), by=1)
+
+newDat <- rbind(NF, WE, Day, ED)
 
 
-
-
-## Plot ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Plot entire time series ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## custom color pal matching ms site colors. NF, blend(WEU & WEK), Day, ED
-pal_sites <- c("#BE2625", "#E88600", "#608341", "#00536f") #BE2625 used for tint and shade creation
-pal_sites2 <- c("#BE2625", "#E88600", "#6f006b", "#00536f") #BE2625 used for tint and shade creation
+pal_sites <- c("#BE2625", "#E88600", "#608341", "#00536f") 
+#pal_sites2 <- c("#BE2625", "#E88600", "#6f006b", "#00536f") #BE2625 used for tint and shade creation
 
-#6f006b
-## graphing window
 graphics.off()
-windows(w=12,h=6,record=TRUE)
-
-
-## one site at a time 
-p1 <- ggplot(Day, aes(DateTime, DegC)) +
-  geom_line()
-print(p1)
+windows(w=12,h=4,record=TRUE)
 
 
 ## all sites 
-p5 <- ggplot(dat, aes(DateTime, DegC, color=Site)) +
-  geom_line() +
+p1 <- ggplot(newDat, aes(SU, DegC, color=Site, group=Site)) + my.theme +
+  geom_line(alpha=.5) + ylab("Degrees Celcius") + 
   scale_colour_manual(values=pal_sites) +
-  facet_wrap(~ Site)
-print(p5)
+  scale_x_continuous(n.breaks = 17, labels=c("remove", "Nov 2015", 
+                                             "Mar 2016", "June 2016", "Oct 2016", "Jan 2017",
+                                             "May 2017", "Aug 2017", "Dec 2017", "Mar 2018",
+                                             "July 2018", "Oct 2018", "Feb 2019", "May 2019",
+                                             "Sep 2019", "")) +
+  theme(axis.text.x = element_text(angle=45, hjust=1), axis.title.x = element_blank(),
+        legend.position = c(0.825, 0.85))
+
+print(p1)
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
 
 
-## KS tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## visualize frequency histograms 
-p6 <- ggplot(dat, aes(DegC, fill=Site)) +
-  geom_histogram(binwidth = 0.15, color="black") + 
-  my.theme +
+## visualize kernal densities ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+graphics.off()
+windows(w=8,h=5,record=TRUE)
+
+## ind sites
+p2 <- ggplot(dat, aes(DegC, fill=Site)) +
+  geom_density(binwidth = 0.15, color="black") +  my.theme +
   scale_fill_manual(values=pal_sites) +
   xlab("Temperature, degrees Celcius") +
-  ggtitle("site specific frequency histograms for 2016-2019 temperature data") +
   facet_wrap(~Site)
-print(p6)
+print(p2)
 
 
-p6 <- ggplot(dat, aes(DegC, fill=Site)) +
-  geom_density(binwidth = 0.15, color="black") + 
-  my.theme +
+## overlapping kernal densities
+p3 <- ggplot(dat, aes(DegC, fill=Site)) +
+  geom_density(position="identity", binwidth = 0.15, color="black", alpha=0.3) +  my.theme +
   scale_fill_manual(values=pal_sites) +
   xlab("Temperature, degrees Celcius") +
-  ggtitle("site specific frequency histograms for 2016-2019 temperature data") +
-  facet_wrap(~Site)
-print(p6)
-
-
-
-
-## transparent and overlapping histograms.
-p6 <- ggplot(dat, aes(DegC, fill=Site)) +
-  geom_histogram(position="identity", binwidth = 0.15, color="black", alpha=0.4) + 
-  my.theme +
-  scale_fill_manual(values=pal_sites) +
-  xlab("Temperature, degrees Celcius") +
-  ggtitle("overlapping histograms for 2016-2019 temperature data") +
   guides(fill=guide_legend(order=1))
-print(p6)
-
-
-p6 <- ggplot(dat, aes(DegC, fill=Site)) +
-  geom_density(position="identity", binwidth = 0.15, color="black", alpha=0.3) + 
-  my.theme +
-  scale_fill_manual(values=pal_sites2) +
-  xlab("Temperature, degrees Celcius") +
-  ggtitle("overlapping kernal densities for 2016-2019 temperature data") +
-  guides(fill=guide_legend(order=1))
-print(p6)
+print(p3)
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
+
+
+## KS two-sample tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## Degrees C as a numeric vector
 NF_num <- NF$DegC
 WE_num <- WE$DegC
 Day_num <- Day$DegC
 ED_num <- ED$DegC
 ED_num <- na.omit(ED_num)
-
 
 
 ## perform KS tests 
@@ -214,7 +204,6 @@ Day_wavelet = analyze.wavelet(Day_temp, loess.span = 0,
 graphics.off()
 windows(w=12,h=8,record=TRUE)
 
-
 ## unsure why par is not working here? 
 par(mfrow=c(2,2))
 
@@ -259,13 +248,13 @@ cross_cor <- ccf(NF_temp, ED_temp, type = "correlation",
                  ylab="cross-correlation")
 abline(v=8760, col="red")
 abline(v=4380, col="darkorchid")
+## END acf and ccf ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
 
 
-
-## inverse ecdf plots
+## inverse ecdf plots ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## calcuate empirical cumulative density function and extract and sort values
 NF_ecdf <- data.frame(x=unique(NF$DegC), 
                       y=ecdf(NF$DegC)(unique(NF$DegC))*length(NF$DegC))
@@ -308,10 +297,11 @@ pal_sites <- c("#BE2625", "#E88600", "#608341", "#00536f") #BE2625 used for tint
 p1 <- ggplot(dat_ecdf, aes(x, inv_y, color=Site)) + my.theme +
   geom_line(lwd=1, alpha=.8) +
   scale_color_manual(values=pal_sites) +
-  xlab("Water temperature (degrees Celcius)") + ylab("empirical probability") + 
-  ggtitle("probability of water temperature being equal to or warmer than the corresponding (x-axis) temp")
+  xlab("Temperature, degrees Celcius") + ylab("empirical probability") 
+  #ggtitle("probability of water temperature being equal to or warmer than the corresponding (x-axis) temp")
 
 print(p1)
-
+## END inverse ecdf plots ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## END OF SCRIPT ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
 

@@ -1,7 +1,0 @@
-HDF5 FILE 
-        name /
-    filename 
-
-                 name     otype dclass dim
-0 level-3_binned_data H5I_GROUP           
-1 processing_control  H5I_GROUP           

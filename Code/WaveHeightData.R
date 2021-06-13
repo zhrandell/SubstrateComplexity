@@ -40,11 +40,15 @@ my.theme = theme(panel.grid.major = element_blank(),
                  panel.grid.minor = element_blank(),
                  panel.background = element_blank(), 
                  axis.line = element_line(colour = "black"),
-                 axis.title=element_text(size=16),
-                 axis.text=element_text(size=14),
-                 plot.title = element_text(size=16))
+                 axis.title = element_text(size=16),
+                 axis.text = element_text(size=14),
+                 plot.title = element_text(size=16), 
+                 legend.text = element_text(size=14), 
+                 legend.title = element_blank(), 
+                 legend.position = c(0.85, 0.85))
 
-#install_github("Rdatatable/data.table")
+graphics.off()
+windows(h=5,w=8, record=TRUE)
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -83,14 +87,17 @@ pal_sites <- c("#BE2625", "#E88600", "#608341", "#00536f") #BE2625 used for tint
 #6f006b
 ## graphing window
 graphics.off()
-windows(w=12,h=6,record=TRUE)
+windows(w=12,h=4,record=TRUE)
 
 
 ## all sites 
 p5 <- ggplot(dat, aes(SU, WaveHeight, color=Site)) +
   geom_line(alpha=.7) +
   scale_colour_manual(values=pal_sites) +
-  my.theme 
+  scale_x_continuous(n.breaks=12, labels=c("null", 
+                                           "Nov","Dec","Jan","Feb","Mar","Apr","May","June","July","Aug", "Sep",
+                                           "")) +
+  my.theme + theme(axis.title.x=element_blank()) + ylab("Wave height (meters)")
 print(p5)
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -132,13 +139,18 @@ p6 <- ggplot(dat, aes(WaveHeight, fill=Site)) +
   guides(fill=guide_legend(order=1))
 print(p6)
 
+
+## graphing window
+graphics.off()
+windows(w=8,h=5,record=TRUE)
+
 ## use logWV for logged data, and WaveHeight for "normal" scale (meters)
 p7 <- ggplot(dat, aes(logWV, fill=Site)) +
   geom_density(position="identity", color="black", alpha=0.3) + 
   my.theme +
   scale_fill_manual(values=pal_sites) +
   xlab("Wave height (log meters)") +
-  ggtitle("overlapping kernal densities for one year of wave height data") +
+  #ggtitle("overlapping kernal densities for one year of wave height data") +
   guides(fill=guide_legend(order=1))
 print(p7)
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -189,8 +201,8 @@ dat_ecdf$Site <- factor(dat_ecdf$Site, levels=c("NavFac", "WestEnd", "Daytona", 
 p1 <- ggplot(dat_ecdf, aes(x, inv_y, color=Site)) + my.theme +
   geom_line(lwd=1, alpha=.8) +
   scale_color_manual(values=pal_sites) +
-  xlab("Wave height (log meters)") + ylab("empirical probability") + 
-  ggtitle("probability of a wave event of equal or greater size relative to log wave height")
+  xlab("Wave height (log meters)") + ylab("inverse empirical CDF")  
+  #ggtitle("probability of a wave event of equal or greater size relative to log wave height")
 
 print(p1)
 ## End script ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
