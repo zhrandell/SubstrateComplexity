@@ -268,7 +268,6 @@ SW.list <- na.omit(as.data.frame(unlist(SW)))
 
 ## sample sizes
 len.N <- length(N.list[,1])
-#len.NE <- length(NE.list[,1])
 len.SW <- length(SW.list[,1])
 len.SE <- length(SE.list[,1])
 
@@ -277,28 +276,23 @@ sampleSize <- min(len.N, len.SW, len.SE)
 
 ## randomly sample from data.frames to ensure equal sample size
 North <- as.data.frame(sample(N.list[,1], sampleSize, replace = FALSE))
-#NorthEast <- as.data.frame(sample(NE.list[,1], sampleSize, replace = FALSE))
 SouthWest <- as.data.frame(sample(SW.list[,1], sampleSize, replace = FALSE))
 SouthEast <- as.data.frame(sample(SE.list[,1], sampleSize, replace = FALSE))
 
 ## rename column with chlorophyll values
 names(North)[1]<-"chlor" 
-#names(NorthEast)[1]<-"chlor"
 names(SouthWest)[1]<-"chlor"
 names(SouthEast)[1]<-"chlor"
 
 ## log scale
 North$logChlor <- log10(North$chlor)
-#NorthEast$logChlor <- log(NorthEast$chlor)
 SouthWest$logChlor <- log10(SouthWest$chlor)
 SouthEast$logChlor <- log10(SouthEast$chlor)
 
 ## add region column 
 North$region <- "North"
-#NorthEast$region <- "NorthEast"
 SouthWest$region <- "SouthWest"
 SouthEast$region <- "SouthEast"
-
 
 ## bind into single data frame
 dat <- rbind(North, SouthWest, SouthEast)
@@ -342,9 +336,6 @@ print(KD)
 ## calcuate empirical cumulative density function and extract and sort values
 N_ecdf <- data.frame(x=unique(North$logChlor), 
                       y=ecdf(North$logChlor)(unique(North$logChlor))*length(North$logChlor))
-#NE_ecdf <- data.frame(x=unique(NorthEast$logChlor), 
-#                      y=ecdf(NorthEast$logChlor)(unique(NorthEast$logChlor))*length(NorthEast$logChlor))
-
 SW_ecdf <- data.frame(x=unique(SouthWest$logChlor), 
                       y=ecdf(SouthWest$logChlor)(unique(SouthWest$logChlor))*length(SouthWest$logChlor))
 SE_ecdf <- data.frame(x=unique(SouthEast$logChlor), 
@@ -353,21 +344,18 @@ SE_ecdf <- data.frame(x=unique(SouthEast$logChlor),
 
 ## rescale extracted cdf values to 0-1 scale
 N_ecdf$y <- scale(N_ecdf$y, center=min(N_ecdf$y), scale=diff(range(N_ecdf$y)))
-#NE_ecdf$y <- scale(NE_ecdf$y, center=min(NE_ecdf$y), scale=diff(range(NE_ecdf$y)))
 SW_ecdf$y <- scale(SW_ecdf$y, center=min(SW_ecdf$y), scale=diff(range(SW_ecdf$y)))
 SE_ecdf$y <- scale(SE_ecdf$y, center=min(SE_ecdf$y), scale=diff(range(SE_ecdf$y)))
 
 
 ## take the inverse of a cdf, such that the p(x) > or = log wave event
 N_ecdf$inv_y <- ((N_ecdf$y - max(N_ecdf$y)) * (-1))
-#NE_ecdf$inv_y <- ((NE_ecdf$y - max(NE_ecdf$y)) * (-1))
 SW_ecdf$inv_y <- ((SW_ecdf$y - max(SW_ecdf$y)) * (-1))
 SE_ecdf$inv_y <- ((SE_ecdf$y - max(SE_ecdf$y)) * (-1))
 
 
 ## add site name to new data frames
 N_ecdf$region <- "North"
-#NE_ecdf$region <- "NorthEast"
 SW_ecdf$region <- "SouthWest"
 SE_ecdf$region <- "SouthEast"
 
