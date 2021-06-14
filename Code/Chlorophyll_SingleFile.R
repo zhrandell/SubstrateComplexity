@@ -21,7 +21,6 @@ library("RColorBrewer")
 library("sp")  # classes for spatial data
 library("rasterVis")  # raster visualisation
 library("maptools")
-library("rgeos")
 library("dismo")
 library("sf")
 library("remotes")
@@ -166,6 +165,59 @@ plot(buff, col="#03A89E50", add=TRUE)
 
 
 
+
+## use site lat long to create raster-extraction regions ~~~~~~~~~~~~~~~~~~~~~~~
+
+## NavFac, WestEnd, EastDutch, Daytona
+x_lon <- c(-119.48681, -119.57419, -119.48407, -119.44412)
+y_lat <- c(33.27354, 33.24772, 33.21598, 33.21687)
+latlong <- cbind(x_lon, y_lat)
+pts <- SpatialPoints(latlong)
+proj4string(pts) <- CRS("+init=epsg:4326")
+
+## create 3km buffer around pts and check via plot 
+pt_buffer <- buffer(pts, 3000)
+plot(p2)
+plot(pt_buffer, col="cyan", add=T)
+points(pts)
+lines(SNI2)
+
+## intersect and cutout island points
+## remove coordinate system from buffer layer to facilitate next steps
+crs(pt_buffer) <- NA
+crs(SNI2) <- NA
+intersect <- gIntersection(pt_buffer, SNI2)
+intersect2 <- gBuffer(intersect, width=0.00001)
+regions <- gDifference(pt_buffer, intersect2)
+
+## extract the four new regions 
+sw <- SpatialPolygons(list(Polygons(list(regions@polygons[[1]]@Polygons[[3]]), "3")))
+n <- SpatialPolygons(list(Polygons(list(regions@polygons[[1]]@Polygons[[4]]), "4")))
+se <- SpatialPolygons(list(Polygons(list(regions@polygons[[1]]@Polygons[[7]]), "7")))
+
+
+## plot and check
+pal <- colorRampPalette(c("white", "#0099CC", "yellow"))
+
+plot(p2, col=pal(1000))
+lines(SNI2)
+plot(sw, add=T, col="#C77CFF50")
+plot(n, add=T, col="#7CAE0050")
+plot(se, add=T, col="#F8766D50")
+points(pts, pch=21, col="black", bg="red", cex=1)
+scalebar((12*km), xy=c(-119.4, 33.09), type='bar', divs=5, lonlat = FALSE, label=c('0','6','12'), below="km")
+compassRose(-119.35,33.385, cex=.75)
+text(-119.48681, 33.27354, "NavFac", pos=3, offset=2)
+text(-119.57419, 33.24772, "WestEnd", pos=2, offset=1.45)
+text(-119.48547, 33.21652, "DutchHarbor", pos=1, offset=1.6)
+text(-119.44412, 33.21687, "Daytona", pos=4, offset=1.65)
+
+## end point creation ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
+
 ## CREATE LINES TO PARTITION BUFFER AND CREATE FOUR REGIONS ~~~~~~~~~~~~~~~~~~~~
 ## coordinates centered around SNI lat / long 
 #l1 <-  rbind(c(-119.4992, 33.1), c(-119.4992, 33.4))
@@ -173,46 +225,46 @@ plot(buff, col="#03A89E50", add=TRUE)
 
 
 ## coordinates manually determined lines based on exposure
-l1 <-  rbind(c(-119.312897, 33.18), c(-119.695722, 33.32))
-l2 <- rbind(c(-119.441736, 33.38125), c(-119.570142, 33.125417))
+#l1 <-  rbind(c(-119.312897, 33.18), c(-119.695722, 33.32))
+#l2 <- rbind(c(-119.441736, 33.38125), c(-119.570142, 33.125417))
 
 ## coordintes --> Formal class Line object 
-S1 <- Line(l1)
-S2 <- Line(l2)
-S3 <- Lines(list(S1, S2), ID="a")
+#S1 <- Line(l1)
+#S2 <- Line(l2)
+#S3 <- Lines(list(S1, S2), ID="a")
 
 ## Formal class Line --> SpatialLines 
-quadLines <- SpatialLines(list(S3))
+#quadLines <- SpatialLines(list(S3))
 
 ## check lines 
-plot(p2)
-lines(SNI2)
-plot(buff, add=T)
-lines(quadLines)
+#plot(p2)
+#lines(SNI2)
+#plot(buff, add=T)
+#lines(quadLines)
 
 ## remove coordinate system from buffer layer to facilitate next steps
-crs(buff) <- NA
-crs(quadLines) <- NA
+#crs(buff) <- NA
+#crs(quadLines) <- NA
 
 ## intersect buffer with quadLines, buffer the intersection, and split the regions
-intersect1 <- gIntersection(buff, quadLines)
-intersect2 <- gBuffer(intersect1, width=0.0001) 
-regions <- gDifference(buff, intersect2)
+#intersect1 <- gIntersection(buff, quadLines)
+#intersect2 <- gBuffer(intersect1, width=0.0001) 
+#regions <- gDifference(buff, intersect2)
 
 ## extract the four new regions 
-sw <- SpatialPolygons(list(Polygons(list(regions@polygons[[1]]@Polygons[[1]]), "1")))
-nw <- SpatialPolygons(list(Polygons(list(regions@polygons[[1]]@Polygons[[2]]), "2")))
-ne <- SpatialPolygons(list(Polygons(list(regions@polygons[[1]]@Polygons[[3]]), "3")))
-se <- SpatialPolygons(list(Polygons(list(regions@polygons[[1]]@Polygons[[4]]), "4")))
+#sw <- SpatialPolygons(list(Polygons(list(regions@polygons[[1]]@Polygons[[1]]), "1")))
+#nw <- SpatialPolygons(list(Polygons(list(regions@polygons[[1]]@Polygons[[2]]), "2")))
+#ne <- SpatialPolygons(list(Polygons(list(regions@polygons[[1]]@Polygons[[3]]), "3")))
+#se <- SpatialPolygons(list(Polygons(list(regions@polygons[[1]]@Polygons[[4]]), "4")))
 
 ## plot and check
-plot(p2, main="3km buffer split into four regions")
-lines(SNI2)
-plot(sw, add=T, col="#C77CFF50")
-plot(nw, add=T, col="#7CAE0050")
-plot(ne, add=T, col="#F8766D50") 
-plot(se, add=T, col="#00BFC450")
-plot(buff, add=T)
+#plot(p2, main="3km buffer split into four regions")
+#lines(SNI2)
+#plot(sw, add=T, col="#C77CFF50")
+#plot(nw, add=T, col="#7CAE0050")
+#plot(ne, add=T, col="#F8766D50") 
+#plot(se, add=T, col="#00BFC450")
+#plot(buff, add=T)
 ## END buffer regions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -221,32 +273,32 @@ plot(buff, add=T)
 
 ## full map ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## GPS coordinates for SNI sites
-coords <- as.data.frame(t(array(c(
-  "NavFac", -119.48681, 33.27354,
-  "WestEnd", -119.57419, 33.24772,
-  "WestDutch", -119.48547, 33.21652,
-  "EastDutch", -119.48407, 33.21598,
-  "Daytona", -119.44412, 33.21687 
-), dim=c(3,5))))
+#coords <- as.data.frame(t(array(c(
+#  "NavFac", -119.48681, 33.27354,
+#  "WestEnd", -119.57419, 33.24772,
+#  "WestDutch", -119.48547, 33.21652,
+#  "EastDutch", -119.48407, 33.21598,
+#  "Daytona", -119.44412, 33.21687 
+#), dim=c(3,5))))
 
 ## plot full map 
-graphics.off()
-windows(h=5,w=6, record=TRUE)
+#graphics.off()
+#windows(h=5,w=6, record=TRUE)
 #legend.args = list(text="Chlorophyll mg / m^-3")
-plot(p2, zlim=c(0,60))
-lines(SNI2)
-plot(buffer, add=TRUE)
-plot(sw, add=T, col="#00BFC470")
-plot(nw, add=T, col="#F8766D70")
-plot(ne, add=T, col="#7CAE0070")
-plot(se, add=T, col="#C77CFF70")
-scalebar((12*km), xy=c(-119.4, 33.09), type='bar', divs=5, lonlat = FALSE, label=c('0','6','12'), below="km")
-points(x=coords[,2], y=coords[,3], pch=21, col="black", bg="red", cex=1)
-text(-119.48681, 33.27354, "NavFac", pos=3, offset=2)
-text(-119.57419, 33.24772, "WestEnd", pos=2, offset=1.45)
-text(-119.48547, 33.21652, "DutchHarbor", pos=1, offset=1.6)
-text(-119.44412, 33.21687, "Daytona", pos=4, offset=1.65)
-compassRose(-119.35,33.385, cex=.75)
+#plot(p2, zlim=c(0,60))
+#lines(SNI2)
+#plot(buffer, add=TRUE)
+#plot(sw, add=T, col="#00BFC470")
+#plot(nw, add=T, col="#F8766D70")
+#plot(ne, add=T, col="#7CAE0070")
+#plot(se, add=T, col="#C77CFF70")
+#scalebar((12*km), xy=c(-119.4, 33.09), type='bar', divs=5, lonlat = FALSE, label=c('0','6','12'), below="km")
+#points(x=coords[,2], y=coords[,3], pch=21, col="black", bg="red", cex=1)
+#text(-119.48681, 33.27354, "NavFac", pos=3, offset=2)
+#text(-119.57419, 33.24772, "WestEnd", pos=2, offset=1.45)
+#text(-119.48547, 33.21652, "DutchHarbor", pos=1, offset=1.6)
+#text(-119.44412, 33.21687, "Daytona", pos=4, offset=1.65)
+#compassRose(-119.35,33.385, cex=.75)
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -255,10 +307,10 @@ compassRose(-119.35,33.385, cex=.75)
 
 ## Extract and visualize Chlorophyll data ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## use spatial polygon specified by coordinates to extract data 
+n_chlor <- as.data.frame(raster::extract(p1, n))
 sw_chlor <- as.data.frame(raster::extract(p1, sw))
-nw_chlor <- as.data.frame(raster::extract(p1, nw))
-ne_chlor <- as.data.frame(raster::extract(p1, ne))
 se_chlor <- as.data.frame(raster::extract(p1, se))
+#se_chlor <- as.data.frame(raster::extract(p1, se))
 
 ## site column 
 sw_chlor$region <- "SouthWest"
