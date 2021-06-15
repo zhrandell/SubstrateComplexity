@@ -38,7 +38,7 @@ library("egg")
 setwd("D:/OneDrive/Active_Projects/Substrate_Complexity/Data/Chlorophyll")
 
 #save.image(file='MODIS_Terra_7685files.RData')
-#quit(save='no')
+quit(save='no')
 
 ## load previous spatial analysis 
 #load('MODIS_Aqua_1626files.RData')
@@ -250,7 +250,6 @@ for (i in 1:len){
 ## post-loop data processing ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## expand list of lists into single list and convert to data frame
 N.list <- na.omit(as.data.frame(unlist(N)))
-#NE.list <- na.omit(as.data.frame(unlist(NE)))
 SE.list <- na.omit(as.data.frame(unlist(SE)))
 SW.list <- na.omit(as.data.frame(unlist(SW)))
 
@@ -367,7 +366,7 @@ dat_ecdf$region <- factor(dat_ecdf$region, levels=c("North", "SouthWest", "South
 
 ## plot all 
 p1 <- ggplot(dat_ecdf, aes(x, inv_y, color=region)) + my.theme +
-  geom_line(lwd=1, alpha=.7) +
+  geom_line(lwd=1, alpha=.7) + 
   scale_color_manual(values=my.pal) +
   xlab("Chlorophyll mg / m^-3") + ylab("inverse empirical CDF") +
   scale_x_continuous(n.breaks=7, labels=c("0.001", "0.01", "0.1", "1", "10", "100", "1000"))
