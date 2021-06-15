@@ -24,7 +24,6 @@ library(grid)
 library(magick)
 library(magrittr)
 library(here)
-library(mclust, quietly=TRUE)
 library(pryr)
 library(ggbeeswarm)
 library(WaveletComp)
@@ -65,7 +64,7 @@ dat <- filter(dat, SU > 3364864 & SU < 28870656)
 
 
 ## log transform
-dat$logWV <- log(dat$WaveHeight)
+dat$logWV <- log10(dat$WaveHeight)
 
 
 ## subset by site
@@ -105,41 +104,7 @@ print(p5)
 
 
 
-## KS tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## visualize frequency histograms 
-p6 <- ggplot(dat, aes(WaveHeight, fill=Site)) +
-  geom_histogram(binwidth = 0.015) + 
-  my.theme +
-  scale_fill_manual(values=pal_sites) +
-  xlab("Wave height, meters") +
-  ggtitle("site specific frequency histograms for one year of wave height data") +
-  facet_wrap(~Site)
-print(p6)
-
-
-p6 <- ggplot(dat, aes(WaveHeight, fill=Site)) +
-  geom_density(binwidth = 0.15, color="black") + 
-  my.theme +
-  scale_fill_manual(values=pal_sites) +
-  xlab("Temperature, degrees Celcius") +
-  ggtitle("site specific frequency histograms for 2016-2019 temperature data") +
-  facet_wrap(~Site)
-print(p6)
-
-
-
-
-## transparent and overlapping histograms.
-p6 <- ggplot(dat, aes(WaveHeight, fill=Site)) +
-  geom_histogram(position="identity", binwidth = 0.015, alpha=0.4) + 
-  my.theme +
-  scale_fill_manual(values=pal_sites) +
-  xlab("Temperature, degrees Celcius") +
-  ggtitle("overlapping histograms for 2016-2019 temperature data") +
-  guides(fill=guide_legend(order=1))
-print(p6)
-
-
+## Kernal densities ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## graphing window
 graphics.off()
 windows(w=8,h=5,record=TRUE)
@@ -149,8 +114,8 @@ p7 <- ggplot(dat, aes(logWV, fill=Site)) +
   geom_density(position="identity", color="black", alpha=0.3) + 
   my.theme +
   scale_fill_manual(values=pal_sites) +
-  xlab("Wave height (log meters)") +
-  #ggtitle("overlapping kernal densities for one year of wave height data") +
+  xlab("Wave height (meters)") +
+  scale_x_continuous(labels=c("null", "0.40", "1", "2.5", "6.3")) +
   guides(fill=guide_legend(order=1))
 print(p7)
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -201,7 +166,9 @@ dat_ecdf$Site <- factor(dat_ecdf$Site, levels=c("NavFac", "WestEnd", "Daytona", 
 p1 <- ggplot(dat_ecdf, aes(x, inv_y, color=Site)) + my.theme +
   geom_line(lwd=1, alpha=.8) +
   scale_color_manual(values=pal_sites) +
-  xlab("Wave height (log meters)") + ylab("inverse empirical CDF")  
+  xlab("Wave height (meters)") + ylab("inverse empirical CDF") +
+  scale_x_continuous(labels=c("null", "0.40", "1", "2.5", "6.3"))
+  
   #ggtitle("probability of a wave event of equal or greater size relative to log wave height")
 
 print(p1)
