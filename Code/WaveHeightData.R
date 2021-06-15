@@ -211,6 +211,23 @@ print(p1)
 
 
 
+## KS tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+NF_num <- NF$logWV
+WE_num <- WE$logWV
+Day_num <- Day$logWV
+ED_num <- ED$logWV
+
+## perform KS tests 
+ks.test(NF_num, ED_num)
+ks.test(NF_num, WE_num)
+ks.test(NF_num, Day_num)
+ks.test(WE_num, ED_num)
+ks.test(WE_num, Day_num)
+ks.test(Day_num, ED_num)
+
+
+
+
 
 
 

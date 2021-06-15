@@ -38,11 +38,11 @@ library("egg")
 setwd("D:/OneDrive/Active_Projects/Substrate_Complexity/Data/Chlorophyll")
 
 #save.image(file='MODIS_Terra_7685files.RData')
-quit(save='no')
+#quit(save='no')
 
 ## load previous spatial analysis 
 #load('MODIS_Aqua_1626files.RData')
-#load('MODIS_Terra_7685files.RData')
+load('MODIS_Terra_7685files.RData')
 
 
 ## set up custom ggplot theme 
@@ -331,6 +331,21 @@ print(KD)
 
 
 
+## KS tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+N_num <- North$logChlor
+SW_num <- SouthWest$logChlor
+SE_num <- SouthEast$logChlor
+
+## perform KS tests 
+ks.test(N_num, SW_num)
+ks.test(N_num, SE_num)
+ks.test(SW_num, SE_num)
+## End KS tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
+
 ## Inverse CDF ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## calcuate empirical cumulative density function and extract and sort values
 N_ecdf <- data.frame(x=unique(North$logChlor), 
@@ -372,6 +387,8 @@ p1 <- ggplot(dat_ecdf, aes(x, inv_y, color=region)) + my.theme +
   scale_x_continuous(n.breaks=7, labels=c("0.001", "0.01", "0.1", "1", "10", "100", "1000"))
 
 print(p1)
-## End script ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## End of plots~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## END OF SCRIPT ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+
 
 

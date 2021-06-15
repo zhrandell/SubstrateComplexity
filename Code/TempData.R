@@ -24,7 +24,6 @@ library(grid)
 library(magick)
 library(magrittr)
 library(here)
-library(mclust, quietly=TRUE)
 library(pryr)
 library(ggbeeswarm)
 library(WaveletComp)
@@ -107,18 +106,39 @@ print(p1)
 graphics.off()
 windows(w=8,h=5,record=TRUE)
 
-## ind sites
-p2 <- ggplot(dat, aes(DegC, fill=Site)) +
-  geom_density(binwidth = 0.15, color="black") +  my.theme +
-  scale_fill_manual(values=pal_sites) +
-  xlab("Temperature, degrees Celcius") +
-  facet_wrap(~Site)
-print(p2)
+## standardize sample size among the four sites 
+len.NF <- length(NF[,4])
+len.WE <- length(WE[,4])
+len.Day <- length(Day[,4])
+len.ED <- length(ED[,4])
 
+## find minimum sample size
+sampleSize <- min(len.NF, len.WE, len.Day, len.ED)
+
+## randomly sample from data.frames to ensure equal sample size
+NavFac <- as.data.frame(sample(NF[,2], sampleSize, replace = F))
+WestEnd <- as.data.frame(sample(WE[,2], sampleSize, replace = F))
+Daytona <- as.data.frame(sample(Day[,2], sampleSize, replace = F))
+EastDutch <- as.data.frame(sample(ED[,2], sampleSize, replace = F))
+
+## rename column 
+names(NavFac)[1]<-"DegC" 
+names(WestEnd)[1]<-"DegC"
+names(Daytona)[1]<-"DegC"
+names(EastDutch)[1]<-"DegC"
+
+## create site column for plotting
+NavFac$site <- "NavFac"
+WestEnd$site <- "WestEnd"
+Daytona$site <- "Daytona"
+EastDutch$site <- "EastDutch"
+
+## 
+newDat <- rbind(NavFac, WestEnd, Daytona, EastDutch)
 
 ## overlapping kernal densities
 p3 <- ggplot(dat, aes(DegC, fill=Site)) +
-  geom_density(position="identity", binwidth = 0.15, color="black", alpha=0.3) +  my.theme +
+  geom_density(position="identity", color="black", alpha=0.3) +  my.theme +
   scale_fill_manual(values=pal_sites) +
   xlab("Temperature, degrees Celcius") +
   guides(fill=guide_legend(order=1))
@@ -131,12 +151,10 @@ print(p3)
 
 ## KS two-sample tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## Degrees C as a numeric vector
-NF_num <- NF$DegC
-WE_num <- WE$DegC
-Day_num <- Day$DegC
-ED_num <- ED$DegC
-ED_num <- na.omit(ED_num)
-
+NF_num <- NavFac$DegC
+WE_num <- WestEnd$DegC
+Day_num <- Daytona$DegC
+ED_num <- EastDutch$DegC
 
 ## perform KS tests 
 ks.test(NF_num, ED_num)
