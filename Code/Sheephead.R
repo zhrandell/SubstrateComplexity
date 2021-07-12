@@ -52,6 +52,9 @@ dat$Site <- factor(dat$Station,
                    levels=c("1","2","3","4","5","6"),
                    labels=c("NavFac","West End Urchin","West End Kelp","West Dutch","East Dutch","Daytona"))
 
+## once more to reorder the site labels (for plotting)
+dat$Site <- factor(dat$Site, levels=c("NavFac","West End Urchin","West End Kelp","Daytona","East Dutch","West Dutch"))
+
 dat <- filter(dat, Site %in% c("NavFac","West End Urchin","West End Kelp","West Dutch","East Dutch","Daytona"))
 
 dat$log <- log10(dat$SumAdultCount+1)
@@ -78,7 +81,7 @@ windows(w=8,h=5,record=TRUE)
 p3 <- ggplot(dat, aes(log, fill=Site)) +
   geom_density(position="identity", color="black", alpha=0.3) +  my.theme +
   scale_fill_manual(values=pal_All) +
-  xlab("total CAsheephead per site (0.1 hectare)") +
+  xlab("total sheephead per site (per 0.1 hectare)") +
   guides(fill=guide_legend(order=1)) +
   scale_x_continuous(labels=c("0","3.16","10","31.6","100","316.2")) +
   theme(legend.title = element_blank())
@@ -142,7 +145,7 @@ dat_ecdf$Site <- factor(dat_ecdf$Site, levels=c("NavFac", "West End Urchin", "We
 p1 <- ggplot(dat_ecdf, aes(x, inv_y, color=Site)) + my.theme +
   geom_line(lwd=1, alpha=.8) +
   scale_color_manual(values=pal_All) +
-  xlab("total CA sheephead per 0.1 hectare") + ylab("inverse empirical CDF") +
+  xlab("total sheephead per site (per 0.1 hectare)") + ylab("inverse empirical CDF") +
   scale_x_continuous(labels=c("0","3.16","10","31.6","100","316.2")) 
 
 print(p1)
