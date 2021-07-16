@@ -30,12 +30,84 @@ library(ggbeeswarm)
 
 setwd("D:/OneDrive/Active_Projects/Substrate_Complexity/Data")
 dat <- read.csv("NMDS_coordinates.csv", header = TRUE)
+
+graphics.off()
+windows(w=10,h=6,record=TRUE)
+
+## set up custom ggplot theme 
+my.theme = theme(panel.grid.major = element_blank(), 
+                 panel.grid.minor = element_blank(),
+                 panel.background = element_blank(), 
+                 axis.line = element_line(colour = "black"),
+                 axis.title = element_text(size=16),
+                 axis.text = element_text(size=14),
+                 plot.title = element_text(size=16)) 
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
 
 
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## convert relief -> rugosity
+dat$rugosity <- dat$RELIEF/10
+
+
+## plot raw data 
+p1 <- ggplot(dat, aes(rugosity, Vel)) + my.theme + geom_point()
+print(p1)
+
+
+## select maximum velocity event
+highvel <- dat %>%
+  group_by(ID) %>%
+  filter(Vel==max(Vel)) %>%
+  arrange(ID)
+
+
+## loess smoother through max velocities (1 per transect)
+smooth <- loess(highvel$Vel ~ highvel$rugosity, data = highvel, span=1)
+loess <- predict(smooth)
+
+
+## plot loess and raw velocities
+c1 <- ggplot(highvel, aes(x=rugosity, y=loess)) + my.theme +
+  geom_line(color = "black", lwd = 1.5) + geom_line(color = "#03A89E", lwd = .75) +
+  geom_point(data=highvel, aes(x=rugosity, y=Vel)) +
+  xlab("Substrate complexity (rugosity)") + ylab("Max velocity")
+print(c1)
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
+
+## select upper X number of velocities ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+topX <- as_tibble(dat) %>%
+  group_by(ID) %>%
+  arrange(Vel, .by_group=TRUE) %>%
+  top_n(5, Vel)
+
+
+## loess smoother through max velocities (1 per transect)
+smooth_upper <- loess(topX$Vel ~ topX$rugosity, data = topX, span=1)
+loess_upper <- predict(smooth_upper)
+
+
+## plot 
+c2 <- ggplot(topX, aes(x=rugosity, y=loess_upper)) + my.theme +
+  geom_line(color = "black", lwd = 1.5) +
+  geom_line(color = "#03A89E", lwd = .75) +
+  geom_point(data=topX, aes(x=rugosity, y=Vel)) +
+  xlab("Substrate complexity (rugosity)") + ylab("Max X # of velocities")
+print(c2)
+## END velocity vs complexity plots `~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
+
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## data configuration ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## reorder sites for plotting 
 dat$SITE <- factor(dat$SITE, levels=c("NavFac", "WestEnd Kelp", "WestEnd Urchin",  
