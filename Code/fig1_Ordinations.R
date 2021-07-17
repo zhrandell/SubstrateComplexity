@@ -243,7 +243,7 @@ K3 <- ggplot(dat, aes(x = NMDS1, y = NMDS2)) +
   theme(legend.position=c(1,1), legend.justification=c(.98,.98), legend.text=element_text(size=12), legend.title = element_text(size=12),
         legend.title.align = 0.5, legend.key.height = unit(.2, "cm"), legend.key=element_rect(fill = FALSE, color=FALSE), legend.background=element_rect(fill=FALSE, color=FALSE)) +
   theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank()) +
-  geom_segment(aes(x=0, y=0, xend=0.078041, yend=0.996950), color="black",lwd=1,
+  geom_segment(aes(x=0, y=0, xend=0.158, yend=0.987), color="black",lwd=1,
                arrow = arrow(length = unit(0.02, "npc"))) +
   theme(plot.margin = margin(r=.1, l=.1, b=2, t=20, unit = "pt")) 
 print(K3)
@@ -280,7 +280,7 @@ print(K7)
 
 ## combine ordination and pane 
 KS <- K3 + annotation_custom(ggplotGrob(K7), 
-                             xmin= .1, xmax= .8, 
+                             xmin= .14, xmax= .84, 
                              ymin= 0.6, ymax= 1.5)
 
 print(KS)
