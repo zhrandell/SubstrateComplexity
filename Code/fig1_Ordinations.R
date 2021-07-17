@@ -22,15 +22,46 @@ library(here)
 
 setwd("D:/OneDrive/Active_Projects/Substrate_Complexity/Data")
 dat <- read.csv("NMDS_coordinates.csv", header = TRUE)
+
+## rugosity data 
+setwd("D:/OneDrive/Active_Projects/Substrate_Complexity/Data")
+relief_dat <- read.csv("SubstrateRugosity.csv", header = TRUE)
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
 
 
+## process rugosity values and add to ordination data sheet ~~~~~~~~~~~~~~~~~~~~
+relief_dat$Rugosity <- relief_dat$RELIEF / 10
+
+
+## calculate mean, sd, se for rugosity values 
+new_rugosity <- ddply(relief_dat, c("SITE", "TRANSECT", "ID"), summarise, 
+                      N = length(Rugosity),
+                      mean_rug = mean(Rugosity),
+                      sd_rug = sd(Rugosity),
+                      se_rug = sd_rug / sqrt(N))
+
+
+## filter out sandy cove
+new_rug <- filter(new_rugosity, SITE %in% c("NavFac","West End Kelp","West End Urchin",
+                                            "Daytona","East Dutch","West Dutch"))
+
+
+## join rugosity values to ordination data 
+newdat <- dplyr::inner_join(dat, new_rug, by="ID")
+
+## fix names of original file columns (altered from table join)
+names(newdat)[7]<-"SITE"
+names(newdat)[10]<-"TRANSECT"
+
+## delete redunant columns (added from table join)
+dat <- newdat[, !(colnames(newdat) %in% c("SITE.y","TRANSECT.y"))]
 ## data prep ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## convert relief -> rugosity 
-dat$Rugosity <- dat$RELIEF / 10
+
+
+
 
 
 ## reorder sites to plot desired order 
@@ -144,7 +175,7 @@ print(K2)
 
 ## extract legend from K4 and add to K2
 K4 <- ggplot(dat, aes(x = NMDS1, y = NMDS2)) +
-  geom_point(pch = 20, alpha = 0.85, aes(color=SITE, size=RELIEF)) + 
+  geom_point(pch = 20, alpha = 0.85, aes(color=SITE, size=mean_rug)) + 
   coord_fixed() + scale_size_continuous(range = c(1,4), breaks = c(10.5, 12.5, 15.0, 17.5, 20.0, 22.5)) + scale_color_manual(values=pal_All) + 
   theme_bw() + theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   xlim(-1.5, 1.1) + ylim(-1.1, 1.4) + ylab("Ordination Axis 2") +
@@ -204,7 +235,7 @@ print(KU)
 
 ## pane 3 -- sea star ordination w/ pt size as rugosity ~~~~~~~~~~~~~~~~~~~~~~~~
 K3 <- ggplot(dat, aes(x = NMDS1, y = NMDS2)) +
-  geom_point(pch = 20, alpha = 0.85, stroke = 0.0, aes(color=SITE, size=Rugosity)) + 
+  geom_point(pch = 20, alpha = 0.85, stroke = 0.0, aes(color=SITE, size=mean_rug)) + 
   coord_fixed() + scale_size_continuous(range = c(0.9,4.5), breaks = c(1.1, 1.2, 1.5, 1.7, 2.0)) + scale_color_manual(values=pal_All) + 
   theme_bw() + theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   xlim(-1.5, 1.1) + ylim(-1.1, 1.4) +
