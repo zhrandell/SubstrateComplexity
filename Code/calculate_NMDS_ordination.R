@@ -22,14 +22,52 @@ library(fitdistrplus)
 graphics.off()
 windows(h=8,w=8, record=TRUE)
 
-## set working directory
+
 setwd("D:/OneDrive/Active_Projects/Substrate_Complexity/Data")
 
-## load data frame
+## data upon which to calculate Bray-Curtis and to perform NMDS analysis 
 dat <- read.csv("SNI_SubtidalSwath_OriginalDataFile.csv", header = TRUE)
 
 ## load ordination (results of a previously run ordination, so one does not have to take large amounts of time to rerun analysis) 
 load("ord_22March2020.rda")
+
+## ordination data (data file already processed via NMDS)
+#dat <- read.csv("NMDS_coordinates.csv", header = TRUE)
+
+## rugosity data 
+relief_dat <- read.csv("SubstrateRugosity.csv", header = TRUE)
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
+
+## process rugosity values and add to ordination data sheet ~~~~~~~~~~~~~~~~~~~~
+relief_dat$Rugosity <- relief_dat$RELIEF / 10
+
+
+## calculate mean, sd, se for rugosity values 
+new_rugosity <- ddply(relief_dat, c("SITE", "TRANSECT", "ID"), summarise, 
+                      N = length(Rugosity),
+                      mean_rug = mean(Rugosity),
+                      sd_rug = sd(Rugosity),
+                      se_rug = sd_rug / sqrt(N))
+
+
+## filter out sandy cove
+new_rug <- filter(new_rugosity, SITE %in% c("NavFac","West End Kelp","West End Urchin",
+                                            "Daytona","East Dutch","West Dutch","Sandy Cove"))
+
+
+## join rugosity values to ordination data 
+newdat <- dplyr::inner_join(dat, new_rug, by="ID")
+
+## fix names of original file columns (altered from table join)
+names(newdat)[4]<-"SITE"
+names(newdat)[7]<-"TRANSECT"
+
+## delete redunant columns (added from table join)
+dat <- newdat[, !(colnames(newdat) %in% c("SITE.y","TRANSECT.y"))]
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -88,7 +126,7 @@ newdf<-droplevels(newdf)
 ## overlay correlation with log species  
 dist <- ord$dist
 ord.points <- postMDS(ord$points, dist)
-scores <- wascores(ord.points, dat_Comm)     #Fall or no_SC
+scores <- wascores(ord.points, dat_Comm)     
 scores
 
 ## add species labels
@@ -97,7 +135,7 @@ points(ord, display = "species")
 text(ord, display = "species", col = "red")
 
 ## correlation with environmentalal variables  
-ord.fit <- envfit(ord, dat$RELIEF)      #Fall or no_SC
+ord.fit <- envfit(ord, dat$mean_rug)      
 plot(ord.fit)
 ord.fit
 #### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -175,7 +213,7 @@ newdf$MidPt[newdf$PERIOD == "1"] <- "NA"
 newdf <- newdf[complete.cases(newdf),]
 
 ## save .csv with spreadsheet
-write.csv(newdf,'SNI_subtidal_swath_NMDS_coordinates.csv')
+write.csv(newdf,'SNI_subtidal_swath_NMDS_coordinates_NEW.csv')
 #### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
