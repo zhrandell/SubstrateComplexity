@@ -109,31 +109,23 @@ x <- rasterize(xy, r, as.vector(chlor),
 
 
 ## broader Channel Islands and southern CA bight
-box1 <- as(extent(-121.0, -118.0, 32.4, 35.0), 'SpatialPolygons')
+#box1 <- as(extent(-121.0, -118.0, 32.4, 35.0), 'SpatialPolygons')
 
 ## narrow around SNI 
 box2 <- as(extent(-119.8, -119.2, 33.05, 33.45), 'SpatialPolygons')
 
 ## apply cutout: broader Channel Islands region  
-p1 <- crop(x, box1)
-SNI1 <- crop(coastlines, box1)
+#p1 <- crop(x, box1)
+#SNI1 <- crop(coastlines, box1)
 
 ## apply cutout: zoom into SNI
 p2 <- crop(x, box2)
 SNI2 <- crop(coastlines, box2)
 
-
-## plot full extent 
-plot(x, zlim=c(0,100))
-lines(SNI1)
-
-## plot Channel Islands region
-plot(p1, zlim=c(0,30))
-lines(SNI1)
-
 ## plot SNI 
 plot(p2, zlim=c(0,90))
 lines(SNI2)
+scalebar(15, xy=c(-119.4, 33.09), type='bar', divs=3, below="km")
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -142,24 +134,27 @@ lines(SNI2)
 
 ## create buffer areas of regions around SNI ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## 1 degree latitude --> km  
-km <- 1 / 110.574
+#km <- 1 / 110.574
 
 ## create 2km buffer 
-buffer <- raster::buffer(SNI2, width=3*km)
-plot(buffer, col="cyan")
-lines(SNI2)
+#buffer <- raster::buffer(SNI2, width=3*km)
+#plot(buffer, col="cyan")
+#lines(SNI2)
+
+
+#buffer2 <- buffer()
 
 ## use raster::erase to only retain outside of island
 ## need to convert SpatialLinesDataFrame --> sf --> SpatialPolygonDataFrame
-SNI_sf <- st_as_sf(SNI2)
-SNI_poly <- st_polygonize(SNI_sf)
-SNI_spatialpoly <- as(SNI_poly, "Spatial") 
-buff <- raster::erase(buffer, SNI_spatialpoly)
-plot(buff, col="#03A89E88")
+#SNI_sf <- st_as_sf(SNI2)
+#SNI_poly <- st_polygonize(SNI_sf)
+#SNI_spatialpoly <- as(SNI_poly, "Spatial") 
+#buff <- raster::erase(buffer, SNI_spatialpoly)
+#plot(buff, col="#03A89E88")
 
 ## plot Cholorphyll data and 2km buffer
-plot(p2)
-plot(buff, col="#03A89E50", add=TRUE)
+#plot(p2)
+#plot(buff, col="#03A89E50", add=TRUE)
 ## END buffer creation ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -205,7 +200,7 @@ plot(sw, add=T, col="#C77CFF50")
 plot(n, add=T, col="#7CAE0050")
 plot(se, add=T, col="#F8766D50")
 points(pts, pch=21, col="black", bg="red", cex=1)
-scalebar((12*km), xy=c(-119.4, 33.09), type='bar', divs=5, lonlat = FALSE, label=c('0','6','12'), below="km")
+#scalebar(12, xy=c(-119.4, 33.09), type='bar', divs=5, lonlat = FALSE, label=c('0','6','12'), below="km")
 compassRose(-119.35,33.385, cex=.75)
 text(-119.48681, 33.27354, "NavFac", pos=3, offset=2)
 text(-119.57419, 33.24772, "WestEnd", pos=2, offset=1.45)
