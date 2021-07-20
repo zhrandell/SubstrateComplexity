@@ -232,7 +232,8 @@ WEK_tr <- ggplot(ab_WEK_39R, aes(x = NMDS1, y = NMDS2)) +
   theme_bw() +
   theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   xlim(-1.4, 1.0) + ylim(-1.0, 1.4) +
-  theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(), 
+  xlab("NMDS Axis-1") +
+  theme(axis.title.x = element_text(size=14), axis.title.y = element_blank(), axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(), 
         legend.position = "none", plot.margin = margin(r=.1, l=.1, b=.1, t=.1, unit = "pt")) +
   annotation_custom(Wek)
 

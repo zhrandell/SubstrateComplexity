@@ -32,39 +32,11 @@ relief_dat <- read.csv("SubstrateRugosity.csv", header = TRUE)
 
 
 
-## process rugosity values and add to ordination data sheet ~~~~~~~~~~~~~~~~~~~~
-relief_dat$Rugosity <- relief_dat$RELIEF / 10
-
-
-## calculate mean, sd, se for rugosity values 
-new_rugosity <- ddply(relief_dat, c("SITE", "TRANSECT", "ID"), summarise, 
-                      N = length(Rugosity),
-                      mean_rug = mean(Rugosity),
-                      sd_rug = sd(Rugosity),
-                      se_rug = sd_rug / sqrt(N))
-
-
-## filter out sandy cove
-new_rug <- filter(new_rugosity, SITE %in% c("NavFac","West End Kelp","West End Urchin",
-                                            "Daytona","East Dutch","West Dutch"))
-
-
-## join rugosity values to ordination data 
-newdat <- dplyr::inner_join(dat, new_rug, by="ID")
-
-## fix names of original file columns (altered from table join)
-names(newdat)[7]<-"SITE"
-names(newdat)[10]<-"TRANSECT"
-
-## delete redunant columns (added from table join)
-dat <- newdat[, !(colnames(newdat) %in% c("SITE.y","TRANSECT.y"))]
 ## data prep ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-
-
-
 ## reorder sites to plot desired order 
+dat$rugosity <- dat$mean_rug / 10
+
+
 dat$SITE <- factor(dat$SITE, levels=c("NavFac", "WestEnd Kelp", "WestEnd Urchin", 
                                       "Daytona", "East Dutch", "West Dutch")) 
 
@@ -235,8 +207,8 @@ print(KU)
 
 ## pane 3 -- sea star ordination w/ pt size as rugosity ~~~~~~~~~~~~~~~~~~~~~~~~
 K3 <- ggplot(dat, aes(x = NMDS1, y = NMDS2)) +
-  geom_point(pch = 20, alpha = 0.85, stroke = 0.0, aes(color=SITE, size=mean_rug)) + 
-  coord_fixed() + scale_size_continuous(range = c(0.9,4.5), breaks = c(1.1, 1.2, 1.5, 1.7, 2.0)) + scale_color_manual(values=pal_All) + 
+  geom_point(pch = 20, alpha = 0.85, stroke = 0.0, aes(color=SITE, size=rugosity)) + 
+  coord_fixed() + scale_size_continuous(range = c(0.9,4.5), breaks = c(1.01, 1.3, 1.6, 1.9, 2.2)) + scale_color_manual(values=pal_All) + 
   theme_bw() + theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   xlim(-1.5, 1.1) + ylim(-1.1, 1.4) +
   guides(color = FALSE, size = guide_legend("Rugosity", order = 1, fill="black")) + 
@@ -280,7 +252,7 @@ print(K7)
 
 ## combine ordination and pane 
 KS <- K3 + annotation_custom(ggplotGrob(K7), 
-                             xmin= .14, xmax= .84, 
+                             xmin= .18, xmax= .8, 
                              ymin= 0.6, ymax= 1.5)
 
 print(KS)

@@ -34,8 +34,8 @@ setwd("D:/OneDrive/Active_Projects/Substrate_Complexity/Data")
 dat <- read.csv("NMDS_coordinates.csv", header = TRUE)
 
 ## rugosity data 
-setwd("D:/OneDrive/Active_Projects/Substrate_Complexity/Data")
-relief_dat <- read.csv("SubstrateRugosity.csv", header = TRUE)
+#setwd("D:/OneDrive/Active_Projects/Substrate_Complexity/Data")
+#relief_dat <- read.csv("SubstrateRugosity.csv", header = TRUE)
 
 ## external plotting window 
 graphics.off()
@@ -55,41 +55,13 @@ my.theme = theme(panel.grid.major = element_blank(),
 
 
 
-## process rugosity values and add to ordination data sheet ~~~~~~~~~~~~~~~~~~~~
-relief_dat$Rugosity <- relief_dat$RELIEF / 10
+## data prep ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## process rugosity values and add to ordination data sheet 
+dat$rugosity <- dat$mean_rug / 10
 
 
-## calculate mean, sd, se for rugosity values 
-new_rugosity <- ddply(relief_dat, c("SITE", "TRANSECT", "ID"), summarise, 
-                      N = length(Rugosity),
-                      mean_rug = mean(Rugosity),
-                      sd_rug = sd(Rugosity),
-                      se_rug = sd_rug / sqrt(N))
-
-
-## filter out sandy cove
-new_rug <- filter(new_rugosity, SITE %in% c("NavFac","West End Kelp","West End Urchin",
-                                            "Daytona","East Dutch","West Dutch"))
-
-
-## join rugosity values to ordination data 
-newdat <- dplyr::inner_join(dat, new_rug, by="ID")
-
-## fix names of original file columns (altered from table join)
-names(newdat)[7]<-"SITE"
-names(newdat)[10]<-"TRANSECT"
-
-## delete redunant columns (added from table join)
-newdat <- newdat[, !(colnames(newdat) %in% c("SITE.y","TRANSECT.y"))]
-## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-
-
-
-## additional data processing ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## reorder transects: NF, WEK, WEU, Day, ED, WD
-newdat$ID <- factor(newdat$ID, levels=c("1_10R", "1_22R", "1_32L", "1_39R", "1_45R",
+dat$ID <- factor(dat$ID, levels=c("1_10R", "1_22R", "1_32L", "1_39R", "1_45R",
                                         "3_10R", "3_22R", "3_32L", "3_39R", "3_45L",
                                         "2_10L", "2_22L", "2_32R", "2_39L", "2_45L",
                                         "6_10R", "6_22L", "6_22R", "6_32L", "6_39L",
@@ -112,23 +84,23 @@ pal_All <- c("#390b0b", "#721716", "#ab2221", "#cb5151", "#df9392", #BE2625 used
 
 ## Velocity vs Rugosity ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## select Max Velocity event 
-highvel <- newdat %>%
+highvel <- dat %>%
   group_by(ID) %>%
   filter(Vel==max(Vel)) %>%
   arrange(ID)
 
 
 ## loess smoother through max velocities (1 per transect)
-smooth <- loess(highvel$Vel ~ highvel$mean_rug, data = highvel, span=1)
+smooth <- loess(highvel$Vel ~ highvel$rugosity, data = highvel, span=1)
 loess <- predict(smooth)
 
 
 ## plot loess and raw velocities
-c1 <- ggplot(highvel, aes(x=mean_rug, y=loess)) + my.theme +
+c1 <- ggplot(highvel, aes(x=rugosity, y=loess)) + my.theme +
   geom_line(color = "black", lwd = 1.5) + geom_line(color = "white", lwd = .75) +
-  geom_point(data=highvel, aes(x=mean_rug, y=Vel, color=ID)) +
+  geom_point(data=highvel, aes(x=rugosity, y=Vel, color=ID)) +
   scale_color_manual(values=pal_All) +
-  xlab("Substrate complexity (rugosity)") + ylab("Max velocity") +
+  xlab("Rugosity") + ylab("Max velocity") +
   theme(legend.position = "none")
 
 print(c1)
@@ -139,7 +111,7 @@ print(c1)
 
 
 ## select upper X number of velocities ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-topX <- newdat %>%
+topX <- dat %>%
   dplyr::group_by(ID) %>%
   dplyr::arrange(Vel, .by_group=TRUE) %>%
   dplyr::top_n(5, Vel) %>%
@@ -151,16 +123,16 @@ joined <- merge(highvel, topX, by.y="ID")
 
 
 ## add loess smoother
-smooth_upper <- loess(joined$mn ~ joined$mean_rug, data = joined, span=1)
+smooth_upper <- loess(joined$mn ~ joined$rugosity, data = joined, span=1)
 loess_upper <- predict(smooth_upper)
 
 
 ## plot loess and raw velocities
-c1 <- ggplot(joined, aes(x=mean_rug, y=loess_upper)) + my.theme +
+c1 <- ggplot(joined, aes(x=rugosity, y=loess_upper)) + my.theme +
   geom_line(color = "black", lwd = 1.5) + geom_line(color = "white", lwd = .75) +
-  geom_point(data=joined, aes(x=mean_rug, y=mn, color=ID)) +
+  geom_point(data=joined, aes(x=rugosity, y=mn, color=ID)) +
   scale_color_manual(values=pal_All) +
-  xlab("Substrate complexity (rugosity)") + ylab("Average of five highest velocities") +
+  xlab("Rugosity") + ylab("Average of five highest velocities") +
   theme(legend.position = "none")
 print(c1)
 ## END Velocity vs Rugosity plots ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -171,10 +143,10 @@ print(c1)
 
 ## Rugosity vs system state ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # plot 
-c2 <- ggplot(newdat, aes(x=mean_rug, y=NMDS1, color=ID)) + my.theme +
+c2 <- ggplot(dat, aes(x=rugosity, y=NMDS1, color=ID)) + my.theme +
   geom_point(position=position_jitter(w=0.03), alpha=.5) +
   scale_color_manual(values=pal_All) +
-  xlab("Substrate complexity (rugosity)") + ylab("NMDS Axis-1 System State") +
+  xlab("Rugosity") + ylab("NMDS Axis-1 System State") +
   theme(legend.position = "none")
 print(c2)
 ## end script ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

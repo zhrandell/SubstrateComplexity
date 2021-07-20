@@ -17,6 +17,8 @@ library(dplyr)
 library(vegan)
 library(MASS)
 library(fitdistrplus)
+library(plyr)
+library(tidyverse)
 
 ## close out window tab & open custom window
 graphics.off()
@@ -43,7 +45,7 @@ relief_dat <- read.csv("SubstrateRugosity.csv", header = TRUE)
 
 
 ## process rugosity values and add to ordination data sheet ~~~~~~~~~~~~~~~~~~~~
-relief_dat$Rugosity <- relief_dat$RELIEF / 10
+relief_dat$Rugosity <- relief_dat$RELIEF 
 
 
 ## calculate mean, sd, se for rugosity values 
@@ -64,10 +66,10 @@ newdat <- dplyr::inner_join(dat, new_rug, by="ID")
 
 ## fix names of original file columns (altered from table join)
 names(newdat)[4]<-"SITE"
-names(newdat)[7]<-"TRANSECT"
+names(newdat)[6]<-"TRANSECT"
 
 ## delete redunant columns (added from table join)
-dat <- newdat[, !(colnames(newdat) %in% c("SITE.y","TRANSECT.y"))]
+dat <- newdat[, !(colnames(newdat) %in% c("SITE.y","TRANSECT.y","N"))]
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -90,7 +92,7 @@ dat <- filter(dat, SITE %in% c("NavFac", "WestEnd Urchin", "WestEnd Kelp",
 dat<-droplevels(dat)
 
 ## remove metadata, creating community matrix of 14 spp
-dat_Comm <- dat[,8:21]
+dat_Comm <- dat[,7:20]
 
 ## log transform 
 log_Comm <- log10(dat_Comm[,1:14]+1)
@@ -212,15 +214,14 @@ newdf$MidPt[newdf$PERIOD == "1"] <- "NA"
 ## drop all rows with NA (the first observation from a transect that doesn't have a distance or velocity observation)
 newdf <- newdf[complete.cases(newdf),]
 
+## set all rows with < 0 days to 0 (these are the Period = 1 sample points)
+newdf$days[newdf$days <= "0"] <- "0"
+
+## remove these Period = 1 transects 
+newdf = filter(newdf, days > "0", )
+
 ## save .csv with spreadsheet
-write.csv(newdf,'SNI_subtidal_swath_NMDS_coordinates_NEW.csv')
+write.csv(newdf,'SNI_subtidal_swath_NMDS_coordinates_2Removed.csv')
 #### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## END script ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
-
-
-
-
-
-
-  
