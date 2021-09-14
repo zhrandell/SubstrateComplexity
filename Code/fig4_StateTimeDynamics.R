@@ -254,6 +254,19 @@ print(p6)
 ## final figure
 windows(h=10,w=25, record=TRUE)
 
+library(egg)
+
+tr3 <- ggarrange(tag_facet(p1 + facet_wrap(~"NMDS1"), tag_pool = "a"),
+                 tag_facet(p3 + facet_wrap(~"NMDS1"), tag_pool = "b"),
+                 tag_facet(p2 + facet_wrap(~"NMDS1"), tag_pool = "c"),
+                 tag_facet(p4 + facet_wrap(~"NMDS1"), tag_pool = "d"),
+                 tag_facet(p5 + facet_wrap(~"NMDS1"), tag_pool = "e" ),
+                 tag_facet(p6 + facet_wrap(~"NMDS1"), tag_pool = "f"),
+                 nrow=1)
+print(tr3)
+
+
+
 g1 <- grid.arrange(arrangeGrob(p1,p2,p3,p4,p5,p6, 
                                nrow=1, ncol=6),
                    bottom=textGrob("NMDS Axis-1: System State",
