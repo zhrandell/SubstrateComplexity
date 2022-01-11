@@ -15,9 +15,3 @@ Multivariate analyses of 14 macroalgae and invertebrate species indicate SNI kel
   <img src="Figures/photos/mixed.jpg" width="250" /> 
   <img src="Figures/photos/urchinbarren.jpg" width="250" />
 </p>
-
-<p float="left">
-  <img src="Figures/photos/flag.JPG" width="250" />
-  <img src="Figures/photos/topside.JPG" width="250" /> 
-  <img src="Figures/photos/canopy.jpg" width="250" />
-</p>
