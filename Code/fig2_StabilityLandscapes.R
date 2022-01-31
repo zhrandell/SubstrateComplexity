@@ -1,6 +1,6 @@
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
-## Figure 2 for SubstrateComplexity ms ~~~~~~~~~~~~~~~~~~~~~~~~ ~~~~~~~~~~~~~ ##
-## Modified May 25th 2021; zhr ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+## Figure 2 for SubstrateComplexity ms ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+## Modified Jan 31 2022; zhr ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
 
@@ -10,52 +10,31 @@
 ## initiate ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 rm(list = ls())
 
-library(ggplot2)
-library(dplyr)
-library(vegan)
+library(tidyverse)
 library(MASS)
 library(fitdistrplus)
 library(gridExtra)
-library(RColorBrewer)
 library(ggpubr)
 library(egg)
 library(gtable)
 library(grid)
 library(magick)
-library(magrittr)
 library(here)
-library(mclust, quietly=TRUE)
-library(pryr)
-library(ggbeeswarm)
-library(plyr)
 
-setwd("D:/OneDrive/Active_Projects/Substrate_Complexity/Data")
+setwd("D:/OneDrive/Active_Projects/SubstrateComplexity/Data")
 dat <- read.csv("NMDS_coordinates.csv", header = TRUE)
-
-graphics.off()
-windows(w=8,h=5,record=TRUE)
-
-## set up custom ggplot theme 
-my.theme = theme(panel.grid.major = element_blank(), 
-                 panel.grid.minor = element_blank(),
-                 panel.background = element_blank(), 
-                 axis.line = element_line(colour = "black"),
-                 axis.title = element_text(size=16),
-                 axis.text = element_text(size=14),
-                 plot.title = element_text(size=16)) 
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
 
 
-## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## data configuration ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## reorder sites for plotting 
-dat$SITE <- factor(dat$SITE, levels=c("NavFac", "WestEnd Kelp", "WestEnd Urchin",  
+dat$SITE <- factor(dat$SITE, levels=c("NavFac", "WestEnd Kelp", "WestEnd Urchin", 
                                       "Daytona", "East Dutch", "West Dutch")) 
-                   
 
+                 
 ## subset by site
 NF <- filter(dat, SITE %in% c("NavFac"))
 WEK <- filter(dat, SITE %in% c("WestEnd Kelp"))
@@ -65,241 +44,139 @@ WEU <- filter(dat, SITE %in% c("WestEnd Urchin"))
 WD <- filter(dat, SITE %in% c("West Dutch"))
 
 
-## subset data to plot individual transects 
-NF_10R <- filter(NF, TRANSECT %in% c("10R")) 
-NF_22R <- filter(NF, TRANSECT %in% c("22R")) 
-NF_32L <- filter(NF, TRANSECT %in% c("32L")) 
+## subset data to the specific transect visualized in row 2 
 NF_39R <- filter(NF, TRANSECT %in% c("39R")) 
-NF_45R <- filter(NF, TRANSECT %in% c("45R")) 
-
-WEK_10R <- filter(WEK, TRANSECT %in% c("10R")) 
-WEK_22R <- filter(WEK, TRANSECT %in% c("22R")) 
-WEK_32L <- filter(WEK, TRANSECT %in% c("32L")) 
 WEK_39R <- filter(WEK, TRANSECT %in% c("39R")) 
-WEK_45L <- filter(WEK, TRANSECT %in% c("45L")) 
-
-WEU_10L <- filter(WEU, TRANSECT %in% c("10L")) 
-WEU_22L <- filter(WEU, TRANSECT %in% c("22L")) 
 WEU_32R <- filter(WEU, TRANSECT %in% c("32R")) 
-WEU_39L <- filter(WEU, TRANSECT %in% c("39L")) 
-WEU_45L <- filter(WEU, TRANSECT %in% c("45L")) 
-
-WD_10R <- filter(WD, TRANSECT %in% c("10R"))
-WD_22L <- filter(WD, TRANSECT %in% c("22L"))
-WD_32L <- filter(WD, TRANSECT %in% c("32L"))
-WD_39L <- filter(WD, TRANSECT %in% c("39L"))
 WD_45L <- filter(WD, TRANSECT %in% c("45L"))
-
-ED_10R <- filter(ED, TRANSECT %in% c("10R"))
 ED_22R <- filter(ED, TRANSECT %in% c("22R"))
-ED_32L <- filter(ED, TRANSECT %in% c("32L"))
-ED_39R <- filter(ED, TRANSECT %in% c("39R"))
-ED_45R <- filter(ED, TRANSECT %in% c("45R"))
-
-Day_10R <- filter(Day, TRANSECT %in% c("10R"))
-Day_22L <- filter(Day, TRANSECT %in% c("22L"))
 Day_22R <- filter(Day, TRANSECT %in% c("22R"))
-Day_32L <- filter(Day, TRANSECT %in% c("32L"))
-Day_39L <- filter(Day, TRANSECT %in% c("39L"))
 
 
 ## subset data to plot grayed out points in row 1 transect tracks 
-ab_WEK_39R <- filter(dat, ID %in% c("1_10R", "1_22R", "1_32L", "1_39R", "1_45R",
-                                    "2_10L", "2_22", "2_32R", "2_39L", "2_45L",
-                                    "4_10R", "4_22L", "4_32L", "4_39L", "4_45L",
-                                    "5_10R", "5_22R", "5_32L", "5_39R", "5_45R",
-                                    "6_10R", "6_22L", "6_22R", "6_32L", "6_39L"))
-
-
-ab_NF_39R <- filter(dat, ID %in% c("2_10L", "2_22", "2_32R", "2_39L", "2_45L",
-                                   "3_10R", "3_22R", "3_32L", "3_39R", "3_45L",
-                                   "4_10R", "4_22L", "4_32L", "4_39L", "4_45L",
-                                   "5_10R", "5_22R", "5_32L", "5_39R", "5_45R",
-                                   "6_10R", "6_22L", "6_22R", "6_32L", "6_39L"))
-
-
-ab_Day_22R <- filter(dat, ID %in% c("1_10R", "1_22R", "1_32L", "1_39R", "1_45R",
-                                    "2_10L", "2_22", "2_32R", "2_39L", "2_45L",
-                                    "3_10R", "3_22R", "3_32L", "3_39R", "3_45L",
-                                    "4_10R", "4_22L", "4_32L", "4_39L", "4_45L",
-                                    "5_10R", "5_22R", "5_32L", "5_39R", "5_45R"))
-
-
-ab_ED_22R <- filter(dat, ID %in% c("1_10R", "1_22R", "1_32L", "1_39R", "1_45R",
-                                   "2_10L", "2_22", "2_32R", "2_39L", "2_45L",
-                                   "3_10R", "3_22R", "3_32L", "3_39R", "3_45L",
-                                   "4_10R", "4_22L", "4_32L", "4_39L", "4_45L",
-                                   "6_10R", "6_22L", "6_22R", "6_32L", "6_39L"))
-
-
-ab_WD_45L <- filter(dat, ID %in% c("1_10R", "1_22R", "1_32L", "1_39R", "1_45R",
-                                   "2_10L", "2_22", "2_32R", "2_39L", "2_45L",
-                                   "3_10R", "3_22R", "3_32L", "3_39R", "3_45L",
-                                   "5_10R", "5_22R", "5_32L", "5_39R", "5_45R",
-                                   "6_10R", "6_22L", "6_22R", "6_32L", "6_39L"))
-
-
-ab_WEU_32R <- filter(dat, ID %in% c("1_10R", "1_22R", "1_32L", "1_39R", "1_45R",
-                                    "3_10R", "3_22R", "3_32L", "3_39R", "3_45L",
-                                    "4_10R", "4_22L", "4_32L", "4_39L", "4_45L",
-                                    "5_10R", "5_22R", "5_32L", "5_39R", "5_45R",
-                                    "6_10R", "6_22L", "6_22R", "6_32L", "6_39L"))
-## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ab_NF <- filter(dat, SITE != c("NavFac"))
+ab_WEK <- filter(dat, SITE != c("WestEnd Kelp"))
+ab_WEU <- filter(dat, SITE != c("WestEnd Urchin"))
+ab_Day <- filter(dat, SITE != c("Daytona"))
+ab_ED <- filter(dat, SITE != c("East Dutch"))
+ab_WD <- filter(dat, SITE != c("West Dutch"))
+## END data subset ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
 
 
 ## plotting prep ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## custom color palattes
-pal_NF <- c("#390b0b", "#721716", "#ab2221", "#cb5151", "#df9392") #BE2625 used for tint and shade creation
-pal_WEK <- c("#301800", "#773b00", "#be5e00", "#f0841a", "#f5ad66") #FF6600 used for tint and shade creation
-pal_WEU <- c("#141100", "#3d3400", "#7b6800", "#b99c00", "#e6d680") #CDAD00 used for tint and shade creation
-pal_Day <- c("#131a0d", "#304221", "#4d6934", "#708f54", "#a0b58d") #608341 used for tint and shade creation
-pal_ED <- c("#003446", "#00536f", "#3386a2", "#66a4b9", "#99c3d1") #00688B used for tint and shade creation
-pal_WD <- c("#2b112b", "#552255", "#803280", "#a560a5", "#c79cc7") #9932CD used for tint and shade creation
-#pal_SC <- c("#062620", "#106050", "#1a997f", "#36c5a9", "#79d9c5")
-
-
-## custom annotations 
-NF_grob <- grobTree(text_grob("NavFac 39R", x=.45, y=.05, hjust=0, size = 11, color = "black"))
-WEK_grob <- grobTree(text_grob("WestEnd Kelp 39R", x=.45, y=.05, hjust=0, size = 11, color = "black"))
-WEU_grob <- grobTree(text_grob("WestEnd Urchin 32R", x=.45, y=.05, hjust=0, size = 11, color = "black"))
-Day_grob <- grobTree(text_grob("Daytona 22R", x=.45, y=.05, hjust=0, size = 11, color = "black"))
-ED_grob <- grobTree(text_grob("East Dutch 22R", x=.45, y=.05, hjust=0, size = 10, color = "black"))
-WD_grob <- grobTree(text_grob("West Dutch 45L", x=.45, y=.05, hjust=0, size = 10, color = "black"))
-
-
+## window size
 graphics.off()
 windows(w=4,h=4,record=TRUE)
-## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+## custom color palattes
+NF.cols <- scale_color_manual(values=c("#390b0b", "#721716", "#ab2221", "#cb5151", "#df9392"))
+WEK.cols <- scale_color_manual(values=c("#301800", "#773b00", "#be5e00", "#f0841a", "#f5ad66"))
+WEU.cols <- scale_color_manual(values=c("#141100", "#3d3400", "#7b6800", "#b99c00", "#e6d680"))
+Day.cols <- scale_color_manual(values=c("#131a0d", "#304221", "#4d6934", "#708f54", "#a0b58d"))
+ED.cols <- scale_color_manual(values=c("#003446", "#00536f", "#3386a2", "#66a4b9", "#99c3d1"))
+WD.cols <- scale_color_manual(values=c("#2b112b", "#552255", "#803280", "#a560a5", "#c79cc7"))
+
+## custom annotations 
+NF.grob <- grobTree(text_grob("39R", x=.85, y=.95, hjust=0, size = 12, color = "black"))
+WEU.grob <- grobTree(text_grob("32R", x=.85, y=.95, hjust=0, size = 12, color = "black"))
+WEK.grob <- grobTree(text_grob("39R", x=.85, y=.95, hjust=0, size = 12, color = "black"))
+Day.grob <- grobTree(text_grob("22R", x=.85, y=.95, hjust=0, size = 12, color = "black"))
+ED.grob <- grobTree(text_grob("22R", x=.85, y=.95, hjust=0, size = 12, color = "black"))
+WD.grob <- grobTree(text_grob("45L", x=.85, y=.95, hjust=0, size = 12, color = "black"))
+
+## ggplot custom themes
+bg.theme <- theme(panel.border = element_rect(color="gray50"), 
+                  panel.grid.major = element_blank(), 
+                  panel.grid.minor = element_blank())
+
+my.theme <- theme(panel.border = element_rect(color="gray50"), 
+                  panel.grid.major = element_blank(), 
+                  panel.grid.minor = element_blank(),
+                  axis.text.x = element_blank(), 
+                  axis.text.y = element_blank(), 
+                  axis.ticks = element_blank(), 
+                  legend.position="none") 
+
+x.title <- theme(axis.title.x = element_text(size=14))
+y.title <- theme(axis.title.y = element_text(size=14))
+no.x.title <- theme(axis.title.x = element_blank())
+no.y.title <- theme(axis.title.y = element_blank())
+no.titles <- theme(axis.title = element_blank())
+margins <- theme(plot.margin = margin(r=.1, l=.1, b=.1, t=.1, unit = "pt"))
+
+## background (bg) pts 
+bg.pt.type <- 20
+bg.pt.alpha <- 0.05
+bg.pt.fill <- "gray"
+bg.pt.col <- "black"
+bg.pt.size <- 0.25
+
+## primary pts and line 
+pt.type <- 20
+pt.alpha <- 0.90
+pt.size <- 0.25
+path.size <- 0.20
+
+## axis lims 
+x.min <- -1.5
+x.max <- 1.2
+y.min <- -1.0
+y.max <- 1.4 
+x.axis <- xlim(x.min, x.max)
+y.axis <- ylim(y.min, y.max)
+## END custom params for Fig2 row 2, transect tracks ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
 
 
 ## Plot Transect Tracks row 2 of figure 2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## custom annotation 
-Nf <- grobTree(text_grob("39R", x=.85, y=.95, hjust=0, size = 12, color = "black"))
+NF_tr <- ggplot(ab_NF, aes(x = NMDS1, y = NMDS2)) +
+  geom_point(color=bg.pt.col, pch = bg.pt.type, alpha = bg.pt.alpha, fill=bg.pt.fill, size=bg.pt.size) +
+  geom_point(data = NF_39R, pch = pt.type, alpha = pt.alpha, aes(color=TRANSECT), size = pt.size) + 
+  geom_path(data = NF_39R, aes(x=NMDS1, y=NMDS2), size = path.size) +
+  NF.cols + coord_fixed() + theme_bw() + bg.theme + x.axis + y.axis + margins + my.theme + y.title + no.x.title + 
+  ylab("NMDS Axis-2") + annotation_custom(NF.grob)
 
-NF_tr <- ggplot(ab_NF_39R, aes(x = NMDS1, y = NMDS2)) +
-  geom_point(color="black", pch = 20, alpha = 0.05, fill="gray", size=.25) +
-  geom_point(data = NF_39R, pch = 20, alpha = 0.90, aes(color=TRANSECT), size = .25) + 
-  scale_color_manual(values=pal_NF) + 
-  geom_path(data = NF_39R, aes(x=NMDS1, y=NMDS2), size=0.2) +
-  coord_fixed() +
-  theme_bw() +
-  theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  xlim(-1.4, 1.0) + ylim(-1.0, 1.4) + ylab("NMDS Axis-2") +
-  theme(axis.title.x = element_blank(), axis.title.y = element_text(size=14), axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(),
-        legend.position = "none") + theme(plot.margin = margin(r=.1, l=.1, b=.1, t=.1, unit = "pt")) +
-  annotation_custom(Nf)
-
-print(NF_tr)
-
-
-
-Weu <- grobTree(text_grob("32R", x=.85, y=.95, hjust=0, size = 12, color = "black"))
-
-WEU_tr <- ggplot(ab_WEU_32R, aes(x = NMDS1, y = NMDS2)) +
-  geom_point(color="black", pch = 20, alpha = 0.05, fill="gray", size=.25) +
-  geom_point(data = WEU_32R, pch = 20, alpha = 0.90, aes(color=TRANSECT), size = .25) + 
-  scale_color_manual(values=pal_WEU) + 
-  geom_path(data = WEU_32R, aes(x=NMDS1, y=NMDS2), size=0.2) +
-  coord_fixed() +
-  xlab("System State") +
-  theme_bw() +
-  theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+WEU_tr <- ggplot(ab_WEU, aes(x = NMDS1, y = NMDS2)) +
+  geom_point(color=bg.pt.col, pch = bg.pt.type, alpha = bg.pt.alpha, fill=bg.pt.fill, size=bg.pt.size) +
+  geom_point(data = WEU_32R, pch = pt.type, alpha = pt.alpha, aes(color=TRANSECT), size = pt.size) + 
+  geom_path(data = WEU_32R, aes(x=NMDS1, y=NMDS2), size = path.size) +
   scale_x_continuous(limits = c(-1.5, 1.2), position = "top") +
-  ylim(-1.0, 1.4) +
-  theme(axis.title.x = element_text(size=14), axis.title.y = element_blank(), axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(), 
-        legend.position = "none", plot.margin = margin(r=.1, l=.1, b=.1, t=.1, unit = "pt")) +
-  annotation_custom(Weu)
+  WEU.cols + coord_fixed() + theme_bw() + bg.theme + y.axis + margins + my.theme + no.y.title + x.title +  
+  xlab("System State") + annotation_custom(WEU.grob)
 
-print(WEU_tr)
+WEK_tr <- ggplot(ab_WEK, aes(x = NMDS1, y = NMDS2)) +
+  geom_point(color=bg.pt.col, pch = bg.pt.type, alpha = bg.pt.alpha, fill=bg.pt.fill, size=bg.pt.size) +
+  geom_point(data = WEK_39R, pch = pt.type, alpha = pt.alpha, aes(color=TRANSECT), size = pt.size) + 
+  geom_path(data = WEK_39R, aes(x=NMDS1, y=NMDS2), size = path.size) +
+  WEK.cols + coord_fixed() + theme_bw() + bg.theme + x.axis + y.axis + margins + my.theme + no.y.title + x.title + 
+  xlab("NMDS Axis-1") + annotation_custom(WEK.grob)
 
+Day_tr <- ggplot(ab_Day, aes(x = NMDS1, y = NMDS2)) +
+  geom_point(color=bg.pt.col, pch = bg.pt.type, alpha = bg.pt.alpha, fill=bg.pt.fill, size=bg.pt.size) +
+  geom_point(data = Day_22R, pch = pt.type, alpha = pt.alpha, aes(color=TRANSECT), size = pt.size) + 
+  geom_path(data = Day_22R, aes(x=NMDS1, y=NMDS2), size = path.size) +
+  Day.cols + coord_fixed() + theme_bw() + bg.theme + x.axis + y.axis + margins + my.theme + no.titles + 
+  annotation_custom(Day.grob)
 
+ED_tr <- ggplot(ab_ED, aes(x = NMDS1, y = NMDS2)) +
+  geom_point(color=bg.pt.col, pch = bg.pt.type, alpha = bg.pt.alpha, fill=bg.pt.fill, size=bg.pt.size) +
+  geom_point(data = ED_22R, pch = pt.type, alpha = pt.alpha, aes(color=TRANSECT), size = pt.size) + 
+  geom_path(data = ED_22R, aes(x=NMDS1, y=NMDS2), size = path.size) +
+  ED.cols + coord_fixed() + theme_bw() + bg.theme + x.axis + y.axis + margins + my.theme + no.titles + 
+  annotation_custom(ED.grob)
 
-Wek <- grobTree(text_grob("39R", x=.85, y=.95, hjust=0, size = 12, color = "black"))
-
-WEK_tr <- ggplot(ab_WEK_39R, aes(x = NMDS1, y = NMDS2)) +
-  geom_point(color="black", pch = 20, alpha = 0.05, fill="gray", size=.25) +
-  geom_point(data = WEK_39R, pch = 20, alpha = 0.90, aes(color=TRANSECT), size = .25) + 
-  scale_color_manual(values=pal_WEK) + 
-  geom_path(data = WEK_39R, aes(x=NMDS1, y=NMDS2), size=0.2) +
-  coord_fixed() +
-  theme_bw() +
-  theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  xlim(-1.4, 1.0) + ylim(-1.0, 1.4) +
-  xlab("NMDS Axis-1") +
-  theme(axis.title.x = element_text(size=14), axis.title.y = element_blank(), axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(), 
-        legend.position = "none", plot.margin = margin(r=.1, l=.1, b=.1, t=.1, unit = "pt")) +
-  annotation_custom(Wek)
-
-print(WEK_tr)
-
-
-
-Dy <- grobTree(text_grob("22R", x=.85, y=.95, hjust=0, size = 12, color = "black"))
-
-Day_tr <- ggplot(ab_Day_22R, aes(x = NMDS1, y = NMDS2)) +
-  geom_point(color="black", pch = 20, alpha = 0.05, fill="gray", size=.25) +
-  geom_point(data = Day_22R, pch = 20, alpha = 0.80, aes(color=TRANSECT), size = .25) + 
-  scale_color_manual(values=pal_Day) + 
-  geom_path(data = Day_22R, aes(x=NMDS1, y=NMDS2), size=0.2) +
-  coord_fixed() +
-  theme_bw() +
-  theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  xlim(-1.4, 1.0) + ylim(-1.0, 1.4) +
-  theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(), 
-        legend.position = "none", plot.margin = margin(r=.1, l=.1, b=.1, t=.1, unit = "pt")) +
-  annotation_custom(Dy)
-
-print(Day_tr)
-
-
-
-
-Ed <- grobTree(text_grob("22R", x=.85, y=.95, hjust=0, size = 12, color = "black"))
-
-ED_tr <- ggplot(ab_ED_22R, aes(x = NMDS1, y = NMDS2)) +
-  geom_point(color="black", pch = 20, alpha = 0.05, fill="gray", size=.25) +
-  geom_point(data = ED_22R, pch = 20, alpha = 0.90, aes(color=TRANSECT), size = .25) + 
-  scale_color_manual(values=pal_ED) + 
-  geom_path(data = ED_22R, aes(x=NMDS1, y=NMDS2), size=0.2) +
-  coord_fixed() +
-  theme_bw() +
-  theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  xlim(-1.4, 1.0) + ylim(-1.0, 1.4) +
-  theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(), 
-        legend.position = "none", plot.margin = margin(r=.1, l=.1, b=.1, t=.1, unit = "pt")) +
-  annotation_custom(Ed)
-
-print(ED_tr)
-
-
-
-
-Wd <- grobTree(text_grob("45L", x=.85, y=.95, hjust=0, size = 12, color = "black"))
-
-WD_tr <- ggplot(ab_WD_45L, aes(x = NMDS1, y = NMDS2)) +
-  geom_point(color="black", pch = 20, alpha = 0.05, fill="gray", size=.25) +
-  geom_point(data = WD_45L, pch = 20, alpha = 0.90, aes(color=TRANSECT), size = .25) + 
-  scale_color_manual(values=pal_WD) + 
-  geom_path(data = WD_45L, aes(x=NMDS1, y=NMDS2), size=0.2) +
-  coord_fixed() +
-  theme_bw() +
-  theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  xlim(-1.4, 1.0) + ylim(-1.0, 1.4) +
-  theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(), 
-        legend.position = "none", plot.margin = margin(r=.1, l=.1, b=.1, t=.1, unit = "pt")) +
-  annotation_custom(Wd)
-
-print(WD_tr)
+WD_tr <- ggplot(ab_WD, aes(x = NMDS1, y = NMDS2)) +
+  geom_point(color=bg.pt.col, pch = bg.pt.type, alpha = bg.pt.alpha, fill=bg.pt.fill, size=bg.pt.size) +
+  geom_point(data = WD_45L, pch = pt.type, alpha = pt.alpha, aes(color=TRANSECT), size = pt.size) + 
+  geom_path(data = WD_45L, aes(x=NMDS1, y=NMDS2), size = path.size) +
+  WD.cols + coord_fixed() + theme_bw() + bg.theme + x.axis + y.axis + margins + my.theme + no.titles + 
+  annotation_custom(WD.grob)
 ## END transect track plots ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
 
 
 
@@ -307,240 +184,125 @@ print(WD_tr)
 
 ## Plot kernal densities, velocities, and combine both ~~~~~~~~~~~~~~~~~~~~~~~~~
 ## NavFac Kernal densities 
+NF.fill <- scale_fill_manual(values=c("#390b0b", "#721716", "#ab2221", "#cb5151", "#df9392"))
+WEK.fill <- scale_fill_manual(values=c("#301800", "#773b00", "#be5e00", "#f0841a", "#f5ad66"))
+WEU.fill <- scale_fill_manual(values=c("#141100", "#3d3400", "#7b6800", "#b99c00", "#e6d680"))
+Day.fill <- scale_fill_manual(values=c("#131a0d", "#304221", "#4d6934", "#708f54", "#a0b58d"))
+ED.fill <- scale_fill_manual(values=c("#003446", "#00536f", "#3386a2", "#66a4b9", "#99c3d1"))
+WD.fill <- scale_fill_manual(values=c("#2b112b", "#552255", "#803280", "#a560a5", "#c79cc7"))
+
+loess.theme <- theme(panel.border = element_blank(), 
+                     panel.grid.major = element_blank(), 
+                     panel.grid.minor = element_blank(), 
+                     panel.background = element_rect(fill = "transparent",colour = NA), 
+                     plot.background = element_rect(fill = "transparent",colour = NA), 
+                     plot.title = element_blank(), 
+                     axis.title.y = element_blank(), 
+                     axis.title.x = element_blank(), 
+                     axis.text.y.left = element_blank(), 
+                     axis.text.x = element_blank(), 
+                     axis.ticks = element_blank(), 
+                     legend.position = "none")
+
+den.adjust <- 1 
+den.y.lim <- 9.15
+den.y.axis <- scale_y_continuous(limits = c(0, den.y.lim), expand = c(0,0))
+den.x.axis <- scale_x_continuous(limits = c(x.min, x.max), position = "top") 
+den.margins <- theme(plot.margin = margin(r=.1, l=.1, b=.1, t=5, unit = "pt"))
+loess.span <- 0.75
+
+black.line <- geom_line(color = "black", lwd = 1.5)
+white.line <- geom_line(color = "white", lwd = .75)
+loess.ylim <- scale_y_continuous(limits = c(0,.01), expand = c(0,0))
+## END graphical params ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
+
+## velocity of community shift~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+apply.loess <- function(x, y, data){
+  out1 <- loess(x ~ y, data, span = loess.span)
+  out2 <- predict(out1)
+}
+
+## calculate velocities 
+loess_NF <- apply.loess(NF$Vel, NF$MidPt, NF) 
+loess_WEK <- apply.loess(WEK$Vel, WEK$MidPt, WEK) 
+loess_WEU <- apply.loess(WEU$Vel, WEU$MidPt, WEU) 
+loess_Day <- apply.loess(Day$Vel, Day$MidPt, Day) 
+loess_ED <- apply.loess(ED$Vel, ED$MidPt, ED) 
+loess_WD <- apply.loess(WD$Vel, WD$MidPt, WD) 
+## END velocities ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
+
+## plot kernal densities and velocity of community shifts (Fig2 row1) ~~~~~~~~~~
+## NavFac kernal densities 
 NF_kd <- ggplot(NF, aes(NMDS1, group = TRANSECT, fill=TRANSECT)) +
-  geom_density(adjust = 1, position="stack", color=NA) +
-  scale_fill_manual(values=pal_NF) +
-  scale_x_continuous(limits = c(-1.5, 1.2), position = "top") +
-  scale_y_continuous(limits = c(0,9.15), expand = c(0,0)) +
-  theme_bw() +
-  ylab("Negative Potential") +
-  xlab("NavFac") +
-  theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  theme(axis.title.x = element_text(size=14), axis.title.y = element_text(size=14),
-        axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(), plot.title = element_blank(),
-        plot.margin = margin(r=.1, l=.1, b=.1, t=5, unit = "pt"),
-        legend.position="none") 
-print(NF_kd)
-
-## loess smoother through velocities
-smooth_NF <- loess(NF$Vel ~ NF$MidPt, data = NF, span=.75)
-loess_NF <- predict(smooth_NF)
-
-## plot velocities and smoother 
-Fin_NF <- ggplot(NF, aes(x=MidPt, y=loess_NF)) +
-  geom_line(color = "black", lwd = 1.5) +
-  geom_line(color = "white", lwd = .75) +
-  theme(legend.position="none") +
-  scale_x_continuous(limits = c(-1.5, 1.2)) +
-  scale_y_continuous(limits = c(0,.01), expand = c(0,0)) +
-  theme_bw() +
-  theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA), plot.background = element_rect(fill = "transparent",colour = NA), 
-        plot.title = element_blank(), axis.title.y = element_blank(), axis.title.x = element_blank(), axis.text.y.left = element_blank(), axis.text.x = element_blank(), axis.ticks = element_blank()) 
-print(Fin_NF)
-
-## print both
-NF_both <- NF_kd +
-  annotation_custom(ggplotGrob(Fin_NF))
-print(NF_both)
+  geom_density(adjust = den.adjust, position="stack", color=NA) + ylab("Negative Potential") + xlab("NavFac") +
+  theme_bw() + NF.fill + den.x.axis + den.y.axis + my.theme + den.margins + x.title + y.title 
+## plot velocities and combine kernal densities and velocities into single figure 
+vel_NF <- ggplot(NF, aes(x=MidPt, y=loess_NF)) + 
+  black.line + white.line + theme_bw() + x.axis + loess.ylim + loess.theme 
+NF_both <- NF_kd + annotation_custom(ggplotGrob(vel_NF))
 
 
+## WestEnd Kelp kernal densities 
+WEK_kd <- ggplot(WEK, aes(NMDS1, group = TRANSECT, fill=TRANSECT)) +
+  geom_density(adjust = 0.8, position="stack", color=NA) + xlab("West End Kelp") +
+  theme_bw() + WEK.fill + den.x.axis + den.y.axis + my.theme + den.margins + x.title + no.y.title 
+
+## plot velocities and combine kernal densities and velocities into single figure 
+vel_WEK <- ggplot(WEK, aes(x=MidPt, y=loess_WEK)) + 
+  black.line + white.line + theme_bw() + x.axis + loess.ylim + loess.theme 
+WEK_both <- WEK_kd + annotation_custom(ggplotGrob(vel_WEK))
 
 
-
-## West End Kelp kernal densities  
-WEK_kd <- ggplot(WEK, aes(NMDS1, group=TRANSECT, fill=TRANSECT)) +
-  geom_density(adjust = .8, position = "stack", color=NA) +
-  scale_fill_manual(values=pal_WEK) +
-  scale_x_continuous(limits = c(-1.5, 1.2), position = "top") +
-  scale_y_continuous(limits = c(0,9.15), expand = c(0,0)) +
-  theme_bw() +
-  theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  xlab("West End Kelp") +
-  theme(axis.title.x = element_text(size=14), axis.title.y = element_blank(), axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(), plot.title = element_blank(), 
-        plot.margin = margin(r=.1, l=.1, b=.1, t=5, unit = "pt"), legend.position="none") 
-print(WEK_kd)
-
-## loess smoother through velocities
-smooth_WEK <- loess(WEK$Vel ~ WEK$MidPt, data = WEK, span=.75)
-loess_WEK <- predict(smooth_WEK)
-
-## plot velocities and smoother 
-Fin_WEK <- ggplot(WEK, aes(x=MidPt, y=loess_WEK)) +
-  geom_line(color = "black", lwd = 1.5) +
-  geom_line(color = "white", lwd = .75) +
-  theme(legend.position="none") +
-  scale_x_continuous(limits = c(-1.5, 1.2)) +
-  scale_y_continuous(limits = c(0,.01), expand = c(0,0)) +
-  theme_bw() +
-  theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA), plot.background = element_rect(fill = "transparent",colour = NA), 
-        plot.title = element_blank(), axis.title.y = element_blank(), axis.title.x = element_blank(), axis.text.y.left = element_blank(), axis.text.x = element_blank(), axis.ticks = element_blank()) 
-print(Fin_WEK)
-
-## print both
-WEK_both <- WEK_kd +
-  annotation_custom(ggplotGrob(Fin_WEK))
-print(WEK_both)
+## WestEnd Urchin kernal densities 
+WEU_kd <- ggplot(WEU, aes(NMDS1, group = TRANSECT, fill=TRANSECT)) +
+  geom_density(adjust = 0.8, position="stack", color=NA) + xlab("West End Urchin") +
+  theme_bw() + WEU.fill + den.x.axis + den.y.axis + my.theme + den.margins + x.title + no.y.title  
+## plot velocities and combine kernal densities and velocities into single figure 
+vel_WEU <- ggplot(WEU, aes(x=MidPt, y=loess_WEU)) + 
+  black.line + white.line + theme_bw() + x.axis + loess.ylim + loess.theme 
+WEU_both <- WEU_kd + annotation_custom(ggplotGrob(vel_WEU))
 
 
+## Daytona kernal densities 
+Day_kd <- ggplot(Day, aes(NMDS1, group = TRANSECT, fill=TRANSECT)) +
+  geom_density(adjust = den.adjust, position="stack", color=NA) + xlab("Daytona") +
+  theme_bw() + Day.fill + den.x.axis + den.y.axis + my.theme + den.margins + x.title + no.y.title  
+## plot velocities and combine kernal densities and velocities into single figure 
+vel_Day <- ggplot(Day, aes(x=MidPt, y=loess_Day)) + 
+  black.line + white.line + theme_bw() + x.axis + loess.ylim + loess.theme 
+Day_both <- Day_kd + annotation_custom(ggplotGrob(vel_Day))
 
 
-
-## WestEnd Urchin kernal density
-WEU_kd <- ggplot(WEU, aes(NMDS1, group=TRANSECT, fill=TRANSECT)) +
-  geom_density(adjust = 0.8, position="stack", color=NA) +
-  scale_fill_manual(values=pal_WEU) +
-  scale_x_continuous(limits = c(-1.5, 1.2), position = "top") +
-  scale_y_continuous(limits = c(0,9.15), expand = c(0,0)) +
-  theme_bw() +
-  xlab("West End Urchin") +
-  theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  theme(axis.title.x = element_text(size=14), axis.title.y = element_blank(), axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(), plot.title = element_blank(), 
-        plot.margin = margin(r=.1, l=.1, b=.1, t=5, unit = "pt"), legend.position="none") 
-print(WEU_kd)
-
-## loess smoother through velocities
-smooth_WEU <- loess(WEU$Vel ~ WEU$MidPt, data = WEU, span=.75)
-loess_WEU <- predict(smooth_WEU)
-
-## plot velocities and smoother 
-Fin_WEU <- ggplot(WEU, aes(x=MidPt, y=loess_WEU)) +
-  geom_line(color = "black", lwd = 1.5) +
-  geom_line(color = "white", lwd = .75) +
-  theme(legend.position="none") +
-  scale_x_continuous(limits = c(-1.5, 1.2)) +
-  scale_y_continuous(limits = c(0,.01), expand = c(0,0)) +
-  theme_bw() +
-  theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA), plot.background = element_rect(fill = "transparent",colour = NA), 
-        plot.title = element_blank(), axis.title.y = element_blank(), axis.title.x = element_blank(), axis.text.y.left = element_blank(), axis.text.x = element_blank(), axis.ticks = element_blank()) 
-print(Fin_WEU)
-
-## print both
-WEU_both <- WEU_kd +
-  annotation_custom(ggplotGrob(Fin_WEU))
-print(WEU_both)
+## East Dutch kernal densities 
+ED_kd <- ggplot(ED, aes(NMDS1, group = TRANSECT, fill=TRANSECT)) +
+  geom_density(adjust = den.adjust, position="stack", color=NA) + xlab("East Dutch") +
+  theme_bw() + ED.fill + den.x.axis + den.y.axis + my.theme + den.margins + x.title + no.y.title  
+## plot velocities and combine kernal densities and velocities into single figure 
+vel_ED <- ggplot(ED, aes(x=MidPt, y=loess_ED)) + 
+  black.line + white.line + theme_bw() + x.axis + loess.ylim + loess.theme 
+ED_both <- ED_kd + annotation_custom(ggplotGrob(vel_ED))
 
 
-
-
-
-
-## Daytona kernal density 
-Day_kd <- ggplot(Day, aes(NMDS1, group=TRANSECT, fill=TRANSECT)) +
-  geom_density(adjust = 1.0, position="stack", color=NA) +
-  scale_fill_manual(values=pal_Day) +
-  scale_x_continuous(limits = c(-1.5, 1.2), position="top") +
-  scale_y_continuous(limits = c(0,9.15), expand = c(0,0)) +
-  theme_bw() +
-  xlab("Daytona") +
-  theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  theme(axis.title.x = element_text(size=14), axis.title.y = element_blank(), axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(), plot.title = element_blank(), 
-        plot.margin = margin(r=.1, l=.1, b=.1, t=5, unit = "pt"), legend.position="none") 
-print(Day_kd)
-
-## loess smoother through velocities
-smooth_Day <- loess(Day$Vel ~ Day$MidPt, data = Day, span=.75)
-loess_Day <- predict(smooth_Day)
-
-## plot velocities and smoother 
-Fin_Day <- ggplot(Day, aes(x=MidPt, y=loess_Day)) +
-  geom_line(color = "black", lwd = 1.5) +
-  geom_line(color = "white", lwd = .75) +
-  theme(legend.position="none") +
-  scale_x_continuous(limits = c(-1.5, 1.2)) +
-  scale_y_continuous(limits = c(0,.01), expand = c(0,0)) +
-  theme_bw() +
-  theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA), plot.background = element_rect(fill = "transparent",colour = NA), 
-        plot.title = element_blank(), axis.title.y = element_blank(), axis.title.x = element_blank(), axis.text.y.left = element_blank(), axis.text.x = element_blank(), axis.ticks = element_blank()) 
-print(Fin_Day)
-
-## print both
-Day_both <- Day_kd +
-  annotation_custom(ggplotGrob(Fin_Day))
-print(Day_both)
-
-## East Dutch 
-ED_kd <- ggplot(ED, aes(NMDS1, group=TRANSECT, fill=TRANSECT)) +
-  geom_density(adjust = 1.0, position="stack", color=NA) +
-  scale_fill_manual(values=pal_ED) +
-  scale_x_continuous(limits = c(-1.5, 1.2), position="top") +
-  scale_y_continuous(limits = c(0,9.15), expand = c(0,0)) +
-  theme_bw() +
-  xlab("East Dutch") +
-  theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  theme(axis.title.x = element_text(size=14), axis.title.y = element_blank(), axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(), plot.title = element_blank(), 
-        plot.margin = margin(r=.1, l=.1, b=.1, t=5, unit = "pt"), legend.position="none") 
-print(ED_kd)
-
-## loess smoother through velocities 
-smooth_ED <- loess(ED$Vel ~ ED$MidPt, data = ED, span=.75)
-loess_ED <- predict(smooth_ED)
-
-## plot velocities and smoother 
-Fin_ED <- ggplot(ED, aes(x=MidPt, y=loess_ED)) +
-  geom_line(color = "black", lwd = 1.5) +
-  geom_line(color = "white", lwd = .75) +
-  theme(legend.position="none") +
-  scale_x_continuous(limits = c(-1.5, 1.2)) +
-  scale_y_continuous(limits = c(0,.01), expand = c(0,0)) +
-  theme_bw() +
-  theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA), plot.background = element_rect(fill = "transparent",colour = NA), 
-        plot.title = element_blank(), axis.title.y = element_blank(), axis.title.x = element_blank(), axis.text.y.left = element_blank(), axis.text.x = element_blank(), axis.ticks = element_blank()) 
-print(Fin_ED)
-
-## print both 
-ED_both <- ED_kd +
-  annotation_custom(ggplotGrob(Fin_ED))
-print(ED_both)
-
-
-
-
-
-
-
-## West Dutch KERNAL DENSITY
-WD_kd <- ggplot(WD, aes(NMDS1, group=TRANSECT, fill=TRANSECT)) +
-  geom_density(adjust = 1.0, position="stack", color=NA) +
-  scale_fill_manual(values=pal_WD) +
-  scale_x_continuous(limits = c(-1.5, 1.2), position="top") +
-  scale_y_continuous(limits = c(0,9.15), expand = c(0,0), position="right") +
-  theme_bw() +
-  xlab("West Dutch") +
-  theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  ylab("Velocity") +
-  theme(axis.title.x = element_text(size=14), axis.title.y = element_text(size=14), axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(), plot.title = element_blank(), 
-        plot.margin = margin(r=.1, l=.1, b=.1, t=5, unit = "pt"), legend.position="none") 
-print(WD_kd)
-
-## loess smoother through velocities 
-smooth_WD <- loess(WD$Vel ~ WD$MidPt, data = WD, span=.75)
-loess_WD <- predict(smooth_WD)
-
-## plot velocities and smoother 
-Fin_WD <- ggplot(WD, aes(x=MidPt, y=loess_WD)) +
-  geom_line(color = "black", lwd = 1.5) +
-  geom_line(color = "white", lwd = .75) +
-  theme(legend.position="none") +
-  scale_x_continuous(limits = c(-1.5, 1.2)) +
-  scale_y_continuous(limits = c(0,.01), expand = c(0,0), position="right") +
-  theme_bw() +
-  theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA), plot.background = element_rect(fill = "transparent",colour = NA),
-        plot.title = element_blank(), axis.title.y = element_blank(), axis.title.x = element_blank(), axis.text.y = element_blank(), axis.text.x = element_blank(), axis.ticks = element_blank()) 
-print(Fin_WD)
-
-## print both 
-WD_both <- WD_kd +
-  annotation_custom(ggplotGrob(Fin_WD))
-print(WD_both)
-
-
-
-
+## West Dutch kernal densities 
+WD_kd <- ggplot(WD, aes(NMDS1, group = TRANSECT, fill=TRANSECT)) +
+  geom_density(adjust = den.adjust, position="stack", color=NA) + xlab("West Dutch") +
+  theme_bw() + WD.fill + den.x.axis + den.y.axis + my.theme + den.margins + x.title + no.y.title  
+## plot velocities and combine kernal densities and velocities into single figure 
+vel_WD <- ggplot(WD, aes(x=MidPt, y=loess_WD)) + 
+  black.line + white.line + theme_bw() + x.axis + loess.ylim + loess.theme 
+WD_both <- WD_kd + annotation_custom(ggplotGrob(vel_WD))
 
 ## check velocities and kernal densities 
 graphics.off()
 windows(h=8,w=48, record = TRUE)
-
 
 tr3 <- ggarrange(tag_facet(NF_both + facet_wrap(~"NMDS1"), tag_pool = "a"),
                  tag_facet(WEK_both + facet_wrap(~"NMDS1"), tag_pool = "b"),
@@ -556,21 +318,18 @@ print(tr3)
 
 
 
-## LOAD substrate rugosity data for row 3 of figure 2 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-library(ggplot2)
-library(dplyr)
-library(vegan)
-library(MASS)
-library(fitdistrplus)
-library(egg)
+## load substrate rugosity data for fig2 row 3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 library(plyr)
-library(forcats)
 
-setwd("D:/OneDrive/Active_Projects/Substrate_Complexity/Data")
+setwd("D:/OneDrive/Active_Projects/SubstrateComplexity/Data")
 relief_dat <- read.csv("SubstrateRugosity.csv", header = TRUE)
 
 graphics.off()
 windows(h=6,w=6, record=TRUE)
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
 
 
 ## data configuration ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -579,216 +338,115 @@ relief_dat$Rugosity <- relief_dat$RELIEF / 10
 
 
 ## calculate mean, sd, se 
-new_rugosity <- ddply(relief_dat, c("SITE", "TRANSECT", "ID"), summarise, 
+rugosity <- ddply(relief_dat, c("SITE", "TRANSECT", "ID"), summarise, 
                       N = length(Rugosity),
-                      mean_rug = mean(Rugosity),
-                      sd_rug = sd(Rugosity),
-                      se_rug = sd_rug / sqrt(N))
+                      mean = mean(Rugosity),
+                      sd = sd(Rugosity),
+                      se = sd / sqrt(N))
 
 
-new_rug <- filter(new_rugosity, SITE %in% c("NavFac","West End Kelp","West End Urchin",
-                                           "Daytona","East Dutch","West Dutch"))
+## remove Sandy Cove
+rugosity <- filter(rugosity, SITE != c("Sandy Cove"))
+
 
 ## filter data by site to plot 
-NF_rug <- filter(new_rugosity, SITE %in% c("NavFac"))
-WEK_rug <- filter(new_rugosity, SITE %in% c("West End Kelp"))
-Day_rug <- filter(new_rugosity, SITE %in% c("Daytona"))
-ED_rug <- filter(new_rugosity, SITE %in% c("East Dutch"))
-WEU_rug <- filter(new_rugosity, SITE %in% c("West End Urchin"))
-WD_rug <- filter(new_rugosity, SITE %in% c("West Dutch"))
-#SC_rug <- filter(new_rugosity, SITE %in% c("Sandy Cove"))
+filter.site <- function(x){
+  filter(rugosity, SITE %in% x)
+}
+
+
+NF_rug <- filter.site(c("NavFac"))
+WEK_rug <- filter.site(c("West End Kelp"))
+WEU_rug <- filter.site(c("West End Urchin"))
+Day_rug <- filter.site(c("Daytona"))
+ED_rug <- filter.site(c("East Dutch"))
+WD_rug <- filter.site(c("West Dutch"))
 
 
 ## reorder transects (for plotting) by ascending values of rugosity 
-NF_rug$TRANSECT <- factor(NF_rug$TRANSECT, levels = NF_rug$TRANSECT[order(NF_rug$mean_rug)])
-WEK_rug$TRANSECT <- factor(WEK_rug$TRANSECT, levels = WEK_rug$TRANSECT[order(WEK_rug$mean_rug)])
-WEU_rug$TRANSECT <- factor(WEU_rug$TRANSECT, levels = WEU_rug$TRANSECT[order(WEU_rug$mean_rug)])
-Day_rug$TRANSECT <- factor(Day_rug$TRANSECT, levels = Day_rug$TRANSECT[order(Day_rug$mean_rug)])
-ED_rug$TRANSECT <- factor(ED_rug$TRANSECT, levels = ED_rug$TRANSECT[order(ED_rug$mean_rug)])
-WD_rug$TRANSECT <- factor(WD_rug$TRANSECT, levels = WD_rug$TRANSECT[order(WD_rug$mean_rug)])
-#SC_rug$TRANSECT <- factor(SC_rug$TRANSECT, levels = SC_rug$TRANSECT[order(SC_rug$mean_rug)])
+NF_rug$TRANSECT <- factor(NF_rug$TRANSECT, levels = NF_rug$TRANSECT[order(NF_rug$mean)])
+WEK_rug$TRANSECT <- factor(WEK_rug$TRANSECT, levels = WEK_rug$TRANSECT[order(WEK_rug$mean)])
+WEU_rug$TRANSECT <- factor(WEU_rug$TRANSECT, levels = WEU_rug$TRANSECT[order(WEU_rug$mean)])
+Day_rug$TRANSECT <- factor(Day_rug$TRANSECT, levels = Day_rug$TRANSECT[order(Day_rug$mean)])
+ED_rug$TRANSECT <- factor(ED_rug$TRANSECT, levels = ED_rug$TRANSECT[order(ED_rug$mean)])
+WD_rug$TRANSECT <- factor(WD_rug$TRANSECT, levels = WD_rug$TRANSECT[order(WD_rug$mean)])
 ## END data configuration ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
 
 
-## plotting prep ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## custom color palettes 
-up_pal_SC <- c("#062620", "#36c5a9", "#106050", "#1a997f", "#79d9c5")
-up_pal_NF <- c("#9f1009", "#5b0905", "#e3170d", "#e9453d", "#f18b86") #E3170D used for tint and shade creation
-up_pal_WEK <- c("#b34700", "#662900", "#ff6600", "#ff8533", "#ffb380") #FF6600 used for tint and shade creation
-up_pal_WEU <- c("#665c00", "#ffe600", "#b3a100", "#332e00", "#fff380") #FFE600 used for tint and shade creation
-up_pal_Day <- c("#91c591", "#0a2a0a", "#228b22", "#4ea24e", "#145314")
-up_pal_ED <- c("#99c3d1", "#003446", "#3386a2", "#00536f", "#66a4b9") #00688B used for tint and shade creation
-up_pal_WD <- c("#d6adeb", "#b870dc", "#4d1967", "#7a28a4", "#a347d2") #9932CD used for tint and shade creation
-## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## custom params ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+rug.theme <- theme(panel.border = element_rect(color="gray50"), 
+                   panel.grid.major = element_blank(), 
+                   panel.grid.minor = element_blank(),
+                   axis.title.x = element_text(size=14),
+                   axis.title.y = element_text(size=14),
+                   axis.text.x = element_text(size=13), 
+                   axis.text.y = element_text(size=13), 
+                   plot.margin = margin(r=.5, l=.5, b=.5, t=.5, unit = "pt"), 
+                   legend.position="none")
+
+rug.y.scale <- scale_y_continuous(limits = c(.93,2.45), expand = c(0,0)) 
+
+no.y.title <- theme(axis.title.y = element_blank(), 
+                    axis.text.y = element_blank())
+
+no.x.title <- theme(axis.title.x = element_blank())
+
+pt.size <- 3.5
+pt.shape <- 21
+pt.col <- "black"
+sd.width <- 0.4
+## END custom params ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
 
 
-## Plotting ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## plot ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## NavFac
-NF1 <- ggplot(NF_rug, aes(SITE, mean_rug)) +
-  geom_errorbar(aes(x=TRANSECT, ymin=mean_rug-se_rug, ymax=mean_rug+se_rug), width=.4) +
-  geom_point(aes(x=TRANSECT, y=mean_rug, fill=TRANSECT), size = 3.5, shape=21, color="black") +
-  scale_fill_manual(values=up_pal_NF) + 
-  theme_bw() +
-  theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  theme(axis.title.x = element_blank(), 
-        axis.text.x = element_text(size=13, color = "black"), 
-        axis.title.y = element_text(size = 14), 
-        axis.text.y = element_text(size=13), 
-        plot.margin = margin(r=.5, l=.5, b=.5, t=.5, unit = "pt"), 
-        legend.position="none") +
-  labs(x="NavFac") + 
-  labs(y="Rugosity") +
-  scale_y_continuous(limits = c(.93,2.45), expand = c(0,0)) 
-print(NF1)
+p.NF <- ggplot(NF_rug, aes(SITE, mean)) +
+  geom_errorbar(aes(x=TRANSECT, ymin=mean-se, ymax=mean+se), width=sd.width) +
+  geom_point(aes(x=TRANSECT, y=mean, fill=TRANSECT), size = pt.size, shape=pt.shape, color=pt.col) +
+  theme_bw() + rug.theme + NF.fill + rug.y.scale + labs(y="Rugosity") + no.x.title  
 
+## WestEnd Kelp 
+p.WEK <- ggplot(WEK_rug, aes(SITE, mean)) +
+  geom_errorbar(aes(x=TRANSECT, ymin=mean-se, ymax=mean+se), width=sd.width) +
+  geom_point(aes(x=TRANSECT, y=mean, fill=TRANSECT), size = pt.size, shape=pt.shape, color=pt.col) +
+  theme_bw() + rug.theme + WEK.fill + rug.y.scale + no.y.title + no.x.title 
 
-## West End Kelp 
-WEK1 <- ggplot(WEK_rug, aes(SITE, mean_rug)) +
-  geom_errorbar(aes(x=TRANSECT, ymin=mean_rug-se_rug, ymax=mean_rug+se_rug), width=.4) +
-  geom_point(aes(x=TRANSECT, y=mean_rug, fill=TRANSECT), size = 3.5, shape=21, color="black") +
-  scale_fill_manual(values=up_pal_WEK) + 
-  theme_bw() +
-  theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_text(size=13, color = "black"),
-        axis.title.y = element_blank(),
-        axis.text.y = element_blank(), 
-        plot.margin = margin(r=.5, l=.5, b=.5, t=.5, unit = "pt"), 
-        legend.position="none") +
-  labs(x="West End Kelp") +
-  labs(y="Rugosity") +
-  scale_y_continuous(limits = c(.93,2.45), expand = c(0,0)) 
-print(WEK1)
-
-
-## West End Urchin 
-WEU1 <- ggplot(WEU_rug, aes(SITE, mean_rug)) +
-  geom_errorbar(aes(x=TRANSECT, ymin=mean_rug-se_rug, ymax=mean_rug+se_rug), width=.4) +
-  geom_point(aes(x=TRANSECT, y=mean_rug, fill=TRANSECT), size = 3.5, shape=21, color="black") +
-  scale_fill_manual(values=up_pal_WEU) + 
-  theme_bw() +
-  theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.title.x = element_text(size = 14),
-        axis.text.x = element_text(size=13, color = "black"),
-        axis.title.y = element_blank(),
-        axis.text.y = element_blank(), 
-        plot.margin = margin(r=.5, l=.5, b=.5, t=.5, unit = "pt"), 
-        legend.position="none") +
-  labs(x="Transect") +
-  labs(y="Rugosity") +
-  scale_y_continuous(limits = c(.93,2.45), expand = c(0,0)) 
-print(WEU1)
-
+## WestEnd Urchin
+p.WEU <- ggplot(WEU_rug, aes(SITE, mean)) +
+  geom_errorbar(aes(x=TRANSECT, ymin=mean-se, ymax=mean+se), width=sd.width) +
+  geom_point(aes(x=TRANSECT, y=mean, fill=TRANSECT), size = pt.size, shape=pt.shape, color=pt.col) +
+  theme_bw() + rug.theme + WEU.fill + rug.y.scale + no.y.title + xlab("Transect") 
 
 ## Daytona
-Day1 <- ggplot(Day_rug, aes(SITE, mean_rug)) +
-  geom_errorbar(aes(x=TRANSECT, ymin=mean_rug-se_rug, ymax=mean_rug+se_rug), width=.4) +
-  geom_point(aes(x=TRANSECT, y=mean_rug, fill=TRANSECT), size = 3.5, shape=21, color="black") +
-  scale_fill_manual(values=up_pal_Day) + 
-  theme_bw() +
-  theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(), 
-        axis.title.x = element_blank(),
-        axis.text.x = element_text(size=13, color = "black"), 
-        axis.title.y = element_blank(), 
-        axis.text.y = element_blank(), 
-        plot.margin = margin(r=.5, l=.5, b=.5, t=.5, unit = "pt"), 
-        legend.position="none") + 
-  labs(x="Daytona") +
-  labs(y="Rugosity") +
-  scale_y_continuous(limits = c(.93,2.45), expand = c(0,0)) 
-print(Day1)
+p.Day <- ggplot(Day_rug, aes(SITE, mean)) +
+  geom_errorbar(aes(x=TRANSECT, ymin=mean-se, ymax=mean+se), width=sd.width) +
+  geom_point(aes(x=TRANSECT, y=mean, fill=TRANSECT), size = pt.size, shape=pt.shape, color=pt.col) +
+  theme_bw() + rug.theme + Day.fill + rug.y.scale + no.y.title + no.x.title 
 
+## East Dutch
+p.ED <- ggplot(ED_rug, aes(SITE, mean)) +
+  geom_errorbar(aes(x=TRANSECT, ymin=mean-se, ymax=mean+se), width=sd.width) +
+  geom_point(aes(x=TRANSECT, y=mean, fill=TRANSECT), size = pt.size, shape=pt.shape, color=pt.col) +
+  theme_bw() + rug.theme + ED.fill + rug.y.scale + no.y.title + no.x.title 
 
-## East Dutch 
-ED1 <- ggplot(ED_rug, aes(SITE, mean_rug)) +
-  geom_errorbar(aes(x=TRANSECT, ymin=mean_rug-se_rug, ymax=mean_rug+se_rug), width=.4) +
-  geom_point(aes(x=TRANSECT, y=mean_rug, fill=TRANSECT), size = 3.5, shape=21, color="black") +
-  scale_fill_manual(values=up_pal_ED) + 
-  theme_bw() +
-  theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(), 
-        axis.title.x = element_blank(),
-        axis.text.x = element_text(size=13, color = "black"), 
-        axis.title.y = element_blank(), 
-        axis.text.y = element_blank(), 
-        plot.margin = margin(r=.5, l=.5, b=.5, t=.5, unit = "pt"), 
-        legend.position="none") + 
-  labs(x="East Dutch") +
-  labs(y="Rugosity") +
-  scale_y_continuous(limits = c(.93,2.45), expand = c(0,0)) 
-print(ED1)
+## West Dutch
+p.WD <- ggplot(WD_rug, aes(SITE, mean)) +
+  geom_errorbar(aes(x=TRANSECT, ymin=mean-se, ymax=mean+se), width=sd.width) +
+  geom_point(aes(x=TRANSECT, y=mean, fill=TRANSECT), size = pt.size, shape=pt.shape, color=pt.col) +
+  theme_bw() + rug.theme + WD.fill + rug.y.scale + no.y.title + no.x.title 
 
-
-## West Dutch 
-WD1 <- ggplot(WD_rug, aes(SITE, mean_rug)) +
-  geom_errorbar(aes(x=TRANSECT, ymin=mean_rug-se_rug, ymax=mean_rug+se_rug), width=.4) +
-  geom_point(aes(x=TRANSECT, y=mean_rug, fill=TRANSECT), size = 3.5, shape=21, color="black") +
-  scale_fill_manual(values=up_pal_WD) + 
-  theme_bw() +
-  theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(), 
-        axis.title.x = element_blank(),
-        axis.text.x = element_text(size=13, color = "black"), 
-        axis.title.y = element_blank(), 
-        axis.text.y = element_blank(), 
-        plot.margin = margin(r=.5, l=.5, b=.5, t=.5, unit = "pt"), 
-        legend.position="none") + 
-  labs(x="West Dutch") +
-  labs(y="Rugosity") +
-  scale_y_continuous(limits = c(.93,2.45), expand = c(0,0)) 
-print(WD1)
-
-
-## Plot Sandy Cove
-#SC1 <- ggplot(SC_rug, aes(SITE, mean_rug)) +
-#  geom_errorbar(aes(x=TRANSECT, ymin=mean_rug-se_rug, ymax=mean_rug+se_rug), width=.4) +
-#  geom_point(aes(x=TRANSECT, y=mean_rug, fill=TRANSECT), size = 3.5, shape=21, color="black") +
-#  scale_fill_manual(values=up_pal_SC) + 
-#  theme_bw() +
-#  theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(),
-#        panel.grid.minor = element_blank(), 
-#        axis.title.x = element_blank(),
-#        axis.text.x = element_text(size=13, color = "black"), 
-#        axis.title.y = element_blank(), 
-#        axis.text.y = element_blank(), 
-#        plot.margin = margin(r=.5, l=.5, b=.5, t=.5, unit = "pt"), 
-#        legend.position="none") + 
-#  labs(x="Sandy Cove") +
-#  labs(y="Rugosity") +
-#  scale_y_continuous(limits = c(.93,2.45), expand = c(0,0)) 
-#print(SC1)
-## End Site Plots ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-
-
-
-
-## Aggregate all plots into single figure ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Aggregate all plots into single figure 
 graphics.off()
 windows(h=4,w=24, record=TRUE)
 
-
-n11 <- ggarrange(NF1, 
-                 WEK1,
-                 WEU1,
-                 Day1,
-                 ED1,
-                 WD1,
-                 nrow=1)
-
-print(n11)
-## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+n11 <- ggarrange(p.NF, p.WEK, p.WEU, p.Day, p.ED, p.WD, nrow=1)
+## END plots for fig2 row 3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
@@ -798,83 +456,34 @@ print(n11)
 graphics.off()
 windows(w=24,h=12,record=TRUE)
 
+fig2 <- ggarrange(tag_facet(NF_both + facet_wrap(~"NMDS1"), tag_pool = "a"),
+                  tag_facet(WEK_both + facet_wrap(~"NMDS1"), tag_pool = "b"),
+                  tag_facet(WEU_both + facet_wrap(~"NMDS1"), tag_pool = "c"),
+                  tag_facet(Day_both + facet_wrap(~"NMDS1"), tag_pool = "d"),
+                  tag_facet(ED_both + facet_wrap(~"NMDS1"), tag_pool = "e" ),
+                  tag_facet(WD_both + facet_wrap(~"NMDS1"), tag_pool = "f"),
+                  tag_facet(NF_tr + facet_wrap(~"NMDS1"), tag_pool = "g"),
+                  tag_facet(WEK_tr + facet_wrap(~"NMDS1"), tag_pool = "h"),
+                  tag_facet(WEU_tr + facet_wrap(~"NMDS1"), tag_pool = "i"),
+                  tag_facet(Day_tr + facet_wrap(~"NMDS1"), tag_pool = "j"),
+                  tag_facet(ED_tr + facet_wrap(~"NMDS1"), tag_pool = "k"),
+                  tag_facet(WD_tr + facet_wrap(~"NMDS1"), tag_pool = "l"),
+                  tag_facet(p.NF + facet_wrap(~"NMDS1"), tag_pool = "m"),
+                  tag_facet(p.WEK + facet_wrap(~"NMDS1"), tag_pool = "n"),
+                  tag_facet(p.WEU + facet_wrap(~"NMDS1"), tag_pool = "o"),
+                  tag_facet(p.Day + facet_wrap(~"NMDS1"), tag_pool = "p"),
+                  tag_facet(p.ED + facet_wrap(~"NMDS1"), tag_pool = "q"),
+                  tag_facet(p.WD + facet_wrap(~"NMDS1"), tag_pool = "r"),
+                  nrow=3, ncol=6)
 
 
-tr3 <- ggarrange(tag_facet(NF_both +
-                             facet_wrap(~"NMDS1"),
-                           tag_pool = "a"),
-                 tag_facet(WEK_both +
-                             facet_wrap(~"NMDS1"),
-                           tag_pool = "b"),
-                 tag_facet(WEU_both +
-                             facet_wrap(~"NMDS1"),
-                           tag_pool = "c"),
-                 tag_facet(Day_both +
-                             facet_wrap(~"NMDS1"),
-                           tag_pool = "d"),
-                 tag_facet(ED_both +
-                             facet_wrap(~"NMDS1"),
-                           tag_pool = "e" ),
-                 tag_facet(WD_both +
-                             facet_wrap(~"NMDS1"),
-                           tag_pool = "f"),
-                 tag_facet(NF_tr +
-                             facet_wrap(~"NMDS1"),
-                           tag_pool = "g"),
-                 tag_facet(WEK_tr +
-                             facet_wrap(~"NMDS1"),
-                           tag_pool = "h"),
-                 tag_facet(WEU_tr +
-                             facet_wrap(~"NMDS1"),
-                           tag_pool = "i"),
-                 tag_facet(Day_tr +
-                             facet_wrap(~"NMDS1"),
-                           tag_pool = "j"),
-                 tag_facet(ED_tr +
-                             facet_wrap(~"NMDS1"),
-                           tag_pool = "k"),
-                 tag_facet(WD_tr +
-                             facet_wrap(~"NMDS1"),
-                           tag_pool = "l"),
-                 tag_facet(NF1 +
-                             facet_wrap(~"NMDS1"),
-                           tag_pool = "m"),
-                 tag_facet(WEK1 +
-                             facet_wrap(~"NMDS1"),
-                           tag_pool = "n"),
-                 tag_facet(WEU1 +
-                             facet_wrap(~"NMDS1"),
-                           tag_pool = "o"),
-                 tag_facet(Day1 +
-                             facet_wrap(~"NMDS1"),
-                           tag_pool = "p"),
-                 tag_facet(ED1 +
-                             facet_wrap(~"NMDS1"),
-                           tag_pool = "q"),
-                 tag_facet(WD1 +
-                             facet_wrap(~"NMDS1"),
-                           tag_pool = "r"),
-                 nrow=3, ncol=6)
+print(fig2)
+## END fig1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-print(tr3)
+
+
+
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## END of script ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
-
-
-                 
-                 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
