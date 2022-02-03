@@ -1,6 +1,6 @@
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 ## Script to produce Figure 3, Urchin Densities for Substrate Complexity ms ~ ##
-## updated May 25th 2021; zhr ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+## updated Feb 3 2022; zhr ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
 
@@ -10,13 +10,9 @@
 ## startup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 rm(list = ls())
 
-library(ggplot2)
-library(dplyr)
-library(vegan)
 library(MASS)
 library(fitdistrplus)
 library(gridExtra)
-library(RColorBrewer)
 library(ggpubr)
 library(egg)
 library(gtable)
@@ -24,16 +20,12 @@ library(grid)
 library(magick)
 library(magrittr)
 library(here)
-library(mclust, quietly=TRUE)
 library(pryr)
 library(ggbeeswarm)
+library(tidyverse)
 
-setwd("D:/OneDrive/Active_Projects/Substrate_Complexity/Data")
+setwd("D:/OneDrive/Active_Projects/SubstrateComplexity/Data")
 dat <- read.csv("NMDS_coordinates.csv", header = TRUE)
-
-## set window size
-graphics.off()
-windows(h=3,w=3, record=TRUE)
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -42,710 +34,407 @@ windows(h=3,w=3, record=TRUE)
 
 ## configure data ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 dat$SITE <- factor(dat$SITE, levels=c("NavFac", "WestEnd Kelp", "WestEnd Urchin",  
-                                      "Daytona", "East Dutch", "West Dutch"), 
-                   labels=c("NavFac", "WestEnd Kelp", "WestEnd Urchin",  
-                            "Daytona", "East Dutch", "West Dutch"))
+                                      "Daytona", "East Dutch", "West Dutch"))
 
 
 # calculate total urchin densities, algae densities (unused here), and ratios
-dat$totalUrchin<-dat$StrPur+dat$MesFra
-dat$totalAlgae<-dat$SteOsm+dat$LamSpp+dat$MacJuv+dat$LamJuv+dat$EisArb+dat$PteCal+dat$MacPyr+1
-dat$ratio <- dat$totalUrchin/dat$totalAlgae
+dat$totalUrchin <- dat$StrPur + dat$MesFra
 
 
-## subset by site
-NF <- filter(dat, SITE %in% c("NavFac"))
-WEK <- filter(dat, SITE %in% c("WestEnd Kelp"))
-Day <- filter(dat, SITE %in% c("Daytona"))
-ED <- filter(dat, SITE %in% c("East Dutch"))
-WEU <- filter(dat, SITE %in% c("WestEnd Urchin"))
-WD <- filter(dat, SITE %in% c("West Dutch"))
+## function to subset by site
+filter.site <- function(x, y){
+  filter(x, SITE %in% c(y))
+}
+
+
+NF <- filter.site(dat, "NavFac")
+WEK <- filter.site(dat, "WestEnd Kelp")
+WEU <- filter.site(dat, "WestEnd Urchin")
+Day <- filter.site(dat, "Daytona")
+ED <- filter.site(dat, "East Dutch")
+WD <- filter.site(dat, "West Dutch")
 ## end data configuration ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
 
 
-## URCHIN DENSITY BEESWARM PLOTS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## NavFac plot ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## check kernal density
-NF_kd <- ggplot(NF, aes(NMDS1)) +
-  geom_density()
-print(NF_kd)
+## custom graphing params ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## set window size
+no.border <- theme(panel.border = element_blank())
+add.border <- theme(panel.border = element_rect(color="gray50")) 
+x.scale <- scale_x_continuous(limits=c(0, 1))
+y.scale <- scale_y_continuous(limits=c(0, 2.5), expand=c(0, 0))
+margin <- theme(plot.margin = unit(c(.1,.1,.1,.1), "lines")) 
 
-
-## set empty pane to house final product
-NF_kd_print <- ggplot(NF, aes(NMDS1)) +
-  scale_x_continuous(limits = c(0, 1)) + scale_y_continuous(limits = c(0,2.5), expand = c(0,0)) + 
-  theme_bw() + ylab("Velocity") +
-  theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(),
-        plot.title = element_blank()) + theme(plot.margin = margin(r=.1, l=.1, b=.1, t=.1, unit = "pt")) + theme(legend.position="none") 
-
-
-### extract vectors x and y coordinates from NMDS kernal density plot
-S1 <- density(NF$NMDS1)$x
-S2 <- density(NF$NMDS1)$y
-
-
-## calculate max y value; calculate associated x coordinate 
-max_y1 <- which.max(S2)
-max_x1 <- S1[max_y1]
-
-
-## calculate second max y point from kernal density (modify < value accordingly)
-below <- max(S2[S1<0])
-belowY<-which(S2==below)
-max_x2 <- S1[belowY]
-
-
-## calculate minimum y point (trough) and associated x between the two maximums
-trough <- min(S2[S1 < max_x1 & S1 > max_x2])
-ymin<-which(S2==trough)
-min_x1<-S1[ymin]
-
-
-## check plot 
-ggplot(NF, aes(NMDS1)) + geom_density() + 
-  geom_vline(xintercept=max_x1) +
-  geom_vline(xintercept=max_x2) +
-  geom_vline(xintercept=min_x1)
-
-## create new data frames from respective community states
-NF_urchin <- filter(NF, NMDS1>min_x1)
-NF_mixed <- filter(NF, NMDS1<min_x1)
-
-
-## create beeswarm cluster from the mixed state
-n1<-ggplot(NF_mixed) +
-  geom_boxplot(data=NF_mixed, aes(y=totalUrchin), fill="white",alpha=0, color="white", outlier.shape=NA) + 
-  ylim(0,1600) + 
-  geom_beeswarm(data=NF_mixed, aes(x=0, y=totalUrchin), shape=21, fill ="#C2C2C2", color="black", size=.8,groupOnX = NULL, cex=5, stroke=.35,priority = c("random")) +
-  theme_bw() +
-  theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA), plot.background = element_rect(fill = "transparent",colour = NA)) +
-  theme(plot.title = element_blank(),axis.title.y = element_blank(),axis.title.x = element_blank(),axis.text.x = element_blank(),axis.text.y = element_blank(),axis.ticks = element_blank(),legend.position = "none") 
-fig_dat <- ggplot_build(n1)$data[[1]]
-n1 <- n1 + geom_segment(data=fig_dat, aes(x=0-1.1, xend=0+1.1, y=middle, yend=middle), colour="black", size=1.5)
-n1 <- n1 + geom_segment(data=fig_dat, aes(x=0-1, xend=0+1, y=middle, yend=middle), colour="red", size=1)
-
-
-## create beeswarm cluster from the urchin-barren state
-n2<-ggplot(NF_urchin) +
-  geom_boxplot(data=NF_urchin, aes(y=totalUrchin), fill="white",alpha=0, color="white", outlier.shape=NA) + 
-  ylim(0,1600) + 
-  geom_beeswarm(data=NF_urchin, aes(x=0, y=totalUrchin), shape=21, fill ="#C2C2C2", color="black", size=.8, groupOnX = NULL, cex=5, stroke=.35,priority = c("random")) +
-  theme_bw() +
-  theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA), plot.background = element_rect(fill = "transparent",colour = NA)) +
-  theme(plot.title = element_blank(),axis.title.y = element_blank(),axis.title.x = element_blank(),axis.text.y.left = element_blank(),axis.text.x = element_blank(),axis.ticks = element_blank(),legend.position = "none") 
-fig_dat <- ggplot_build(n2)$data[[1]]
-n2 <- n2 + geom_segment(data=fig_dat, aes(x=0-1.1, xend=0+1.1, y=middle, yend=middle), colour="black", size=1.5)
-n2 <- n2 + geom_segment(data=fig_dat, aes(x=0-1, xend=0+1, y=middle, yend=middle), colour="red", size=1)
+my.theme <- theme(panel.grid.major = element_blank(), 
+                  panel.grid.minor = element_blank(), 
+                  panel.background = element_rect(fill = "transparent",colour = NA), 
+                  plot.background = element_rect(fill = "transparent",colour = NA),
+                  plot.title = element_blank(),
+                  axis.title.y = element_blank(),
+                  axis.title.x = element_blank(),
+                  axis.text.x = element_blank(),
+                  axis.text.y = element_blank(),
+                  axis.ticks = element_blank(),
+                  legend.position = "none") 
 
 
 ## coordinates to match labels up with kernal density placement
-plot_xmin <- 0; plot_xmax <- 1; low2 <- 0.33333; high2 <- 0.66666; low3<-0.25; mid3<-0.5; high3<-0.75;
-width<-(plot_xmax-plot_xmin)/5.75
+plot.xmin <- 0; 
+plot.xmax <- 1
+algae.basin <- 0.15; 
+mixed.basin <- 0.5; 
+urchin.basin <- 0.85;
+scaler <- 5.75; 
+width <- (plot.xmax - plot.xmin)/scaler
+label.y <- 0.045; 
+title.x <- 0.4; 
+title.y <- 0.95;
+title.size <- 13;
+title.col <- "black";
+hjust <- 0;
 
 
-## custom annotation for the figure
-nf <- grobTree(text_grob("NavFac", x=.4, y=.95, hjust=0, size = 13, color = "black"))
-M <- grobTree(text_grob("M", x=.33333, y=.045, hjust=0, size = 13, color = "black"))
-B <- grobTree(text_grob("B", x=.63333, y=.045, hjust=0, size = 13, color = "black"))
+## create a site label (title)
+site.name <- function(title, title.x){
+  grobTree(text_grob(title, x=title.x, y=title.y, hjust=hjust, size = title.size, color = title.col))
+}
 
 
-## final figure
-NF_out <-NF_kd_print + 
-  annotation_custom(ggplotGrob(n2), xmin = (high2-width), xmax = (high2+width), ymin = 0, ymax = 2.5) +
-  annotation_custom(ggplotGrob(n1), xmin = low2-width, xmax = low2+width, ymin = 0.0, ymax = 2.5) +
+## create a letter label for each state 
+state.label <- function(label, x.position){
+  grobTree(text_grob(label, x=x.position, y=label.y, hjust=hjust, size=title.size, color=title.col))
+}
+
+
+## call function to create site titles 
+NF.title <- site.name("NavFac", title.x)
+WEK.title <- site.name("West End Kelp", title.x-.1)
+WEU.title <- site.name("West End Urchin", title.x-.1)
+Day.title <- site.name("Daytona", title.x)
+ED.title <- site.name("East Dutch", title.x)
+WD.title <- site.name("West Dutch", title.x)
+
+
+## create state labels and adjust position 
+A <- state.label("A", algae.basin + .02)
+M <- state.label("M", mixed.basin - 0.02)  
+B <- state.label("B", urchin.basin - .04)
+
+
+## x.axis position for black/red mean bars 
+x.1 <- 0.09
+x.2 <- 0.438
+x.3 <- 0.79
+## END custom graphical params ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
+
+## functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## extract "peaks and troughs" from a kernal density plot with two states
+extract.2 <- function(dat, key){
+  x_dat <- density(dat)$x
+  y_dat <- density(dat)$y
+  peak_1_y <- which.max(y_dat)
+  peak_1_x <- x_dat[peak_1_y]
+  peak_2 <- max(y_dat[x_dat < key])
+  peak_2_y <- which(y_dat == peak_2)
+  peak_2_x <- x_dat[peak_2_y]
+  valley_1 <- min(y_dat[x_dat < peak_1_x & x_dat > peak_2_x])
+  valley_1_y <- which(y_dat == valley_1)
+  valley_1_x <- x_dat[valley_1_y]
+  out <- as.numeric(list(peak_1_x, peak_2_x, valley_1_x))
+  return(out)
+}
+
+
+## this extract.2.V2 is a slightly modified version necessary for Daytona's altered kernal density structure 
+extract.2.V2 <- function(dat, key){
+  x_dat <- density(dat)$x
+  y_dat <- density(dat)$y
+  peak_1_y <- which.max(y_dat)
+  peak_1_x <- x_dat[peak_1_y]
+  peak_2 <- max(y_dat[x_dat > key]) ## switch to x_dat > key from x_dat < key
+  peak_2_y <- which(y_dat == peak_2)
+  peak_2_x <- x_dat[peak_2_y]
+  valley_1 <- min(y_dat[x_dat > peak_1_x & x_dat < peak_2_x]) ## switch direction of both <, >
+  valley_1_y <- which(y_dat == valley_1)
+  valley_1_x <- x_dat[valley_1_y]
+  out <- as.numeric(list(peak_1_x, peak_2_x, valley_1_x))
+  return(out)
+}
+
+
+## extract "peaks and troughs" from a kernal density plot with three states 
+extract.3 <- function(site, column, key1, key2){
+  kd <- ggplot(site, aes(column)) +
+    geom_density(adjust=0.8)
+  kd.info <- ggplot_build(kd)
+  df <- as.data.frame(kd.info[[1]])
+  x_dat <- df$x
+  y_dat <- df$y
+  peak_y1 <- which.max(y_dat)
+  peak_x1 <- x_dat[peak_y1]
+  peak_2 <- max(y_dat[x_dat < key1])
+  peak_y2 <- which(y_dat == peak_2)
+  peak_x2 <- x_dat[peak_y2]
+  valley_1 <- min(y_dat[x_dat < peak_x1 & x_dat > peak_x2])
+  valley_y1 <- which(y_dat == valley_1)
+  valley_x1 <- x_dat[valley_y1]
+  peak_3 <- max(y_dat[x_dat > key2]) 
+  peak_y3 <- which(y_dat == peak_3)
+  peak_x3 <- x_dat[peak_y3]
+  valley_2 <- min(y_dat[x_dat > peak_x1 & x_dat < peak_x3])
+  valley_y2 <- which(y_dat == valley_2)
+  valley_x2 <- x_dat[valley_y2]
+  out <- as.numeric(list(peak_x1, peak_x2, valley_x1, peak_x3, valley_x2)) 
+  return(out)
+}
+
+
+## check and make sure kernal density max / mins were extracted properly (used for diagnostic purposes)
+plot.borders <- function(df, dat, list){
+  ggplot(df, aes(dat)) + geom_density(data=df, aes(x=dat)) +
+    geom_vline(xintercept = borders[1]) + 
+    geom_vline(xintercept = borders[2]) +
+    geom_vline(xintercept = borders[3])
+}
+
+
+## function to plot geom_beeswarm of total urchins -- creates core unit of final plot 
+y.lim <- ylim(0, 2632)
+proxy.col <- "white"
+proxy.alph <- 0
+pt.type <- 21
+pt.fill <- "#C2C2C2"
+pt.col <- "black"
+pt.size <- 0.8
+cex <- 5
+stroke <- 0.35
+ptStyle <- "random"
+
+beeswarm.f <- function(dat){
+  ggplot(dat) +
+    geom_boxplot(data=dat, aes(y=totalUrchin), fill=proxy.col, alpha=proxy.alph, color=proxy.col, outlier.shape=NA) + 
+    geom_beeswarm(data=dat, aes(x=0, y=totalUrchin), shape=pt.type, fill=pt.fill, color=pt.col, size=pt.size, groupOnX=NULL, cex=cex, stroke=stroke, priority=c(ptStyle)) +
+    theme_bw() + no.border + my.theme + y.lim #+ scale_y_continuous(breaks=c(0, 650, 1300, 1950, 2600))
+}
+
+
+## extract median urchin density from geom_beeswarm() for two states
+urchin.mean.2 <- function(plot1, plot2){
+  mean1 <- ggplot_build(plot1)$data[[1]][[3]]
+  mean2 <- ggplot_build(plot2)$data[[1]][[3]]
+  out <- as.numeric(list(mean1, mean2))
+}
+
+
+## extract median urchin density from geom_beeswarm() for three states
+urchin.mean.3 <- function(plot1, plot2, plot3){
+  mean1 <- ggplot_build(plot1)$data[[1]][[3]]
+  mean2 <- ggplot_build(plot2)$data[[1]][[3]]
+  mean3 <- ggplot_build(plot3)$data[[1]][[3]]
+  out <- as.numeric(list(mean1, mean2, mean3))
+}
+
+
+## add single pt onto beeswarm ID'ing location of median 
+mean.pts <- function(plot, mu){
+  plot <- plot + geom_point(aes(x=0, y=mu), color="cyan", size=0.5)
+}
+
+
+## add black bar as an outline around final mean plotted on aggregated beeswarm figure
+bar.width <- 0.14
+outline <- 0.0025
+
+black.bar <- function(x, y){
+  annotate("segment", x=(x - outline), xend=(x + bar.width + outline), y=y, yend=y, size=1.5, color="black") 
+}
+
+
+## add red bar as the primary geom_segment highlighting median urchin density 
+red.bar <- function(x, y){
+  annotate("segment", x=(x), xend=(x + bar.width), y=y, yend=y, size=1, color="red") 
+}
+
+
+## function that invokes all previous functions to create beewarm plot; 2 states
+apply.2 <- function(dat, site, column, state1, state2, key){
+  borders <- extract.2(dat, key)
+  state1 <- filter(site, column > borders[3])
+  state2 <- filter(site, column < borders[3])
+  p1 <- beeswarm.f(state1)
+  p2 <- beeswarm.f(state2)
+  means <- urchin.mean.2(p1, p2)
+  p1 <- mean.pts(p1, means[1])
+  p2 <- mean.pts(p2, means[2])
+  return(list(p1, p2))
+}
+
+
+## function that invokes all previous functions to create beewwarm plot (Daytona alternative); 2 states
+apply.2.V2 <- function(dat, site, column, state1, state2, key){
+  borders <- extract.2.V2(dat, key)
+  state1 <- filter(site, column > borders[3])
+  state2 <- filter(site, column < borders[3])
+  p1 <- beeswarm.f(state1)
+  p2 <- beeswarm.f(state2)
+  means <- urchin.mean.2(p1, p2)
+  p1 <- mean.pts(p1, means[1])
+  p2 <- mean.pts(p2, means[2])
+  return(list(p1, p2))
+}
+
+
+## function that invokes all previous functions to create beeswarm plot; 3 states
+apply.3 <- function(site, column, key1, key2, urchin.state, mixed.state, algae.state){
+  borders <- extract.3(site, column, key1, key2)
+  urchin.state <- filter(site, column > borders[5])
+  mixed.state <- filter(site, column < borders[5] & column > borders[3])
+  algae.state <- filter(site, column < borders[3])
+  p1 <- beeswarm.f(urchin.state)
+  p2 <- beeswarm.f(mixed.state)
+  p3 <- beeswarm.f(algae.state)
+  means <- urchin.mean.3(p1, p2, p3)
+  p1 <- mean.pts(p1, means[1])
+  p2 <- mean.pts(p2, means[2])
+  p3 <- mean.pts(p3, means[3])
+  return(list(p1, p2, p3))
+}
+## END functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
+
+## invoke functions to extract borders, calculate data frame, create figs ~~~~~~
+NF_figs <- apply.2(NF$NMDS1, NF, NF$NMDS1, NF_urchin, NF_mixed, 0)
+ED_figs <- apply.2(ED$NMDS1, ED, ED$NMDS1, ED_urchin, ED_mixed, -0.5)
+Day_figs <- apply.2.V2(Day$NMDS1, Day, Day$NMDS1, Day_urchin, Day_mixed, 0.5)
+WEK_figs <- apply.3(WEK, WEK$NMDS1, -0.75, 0.5, WEK_urchin, WEK_mixed, WEK_algae)
+WEU_figs <- apply.3(WEU, WEU$NMDS1, -0.75, 0.5, WEU_urchin, WEU_mixed, WEU_algae)
+## END calculations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
+
+## aggregate all information into final site-level figures ~~~~~~~~~~~~~~~~~~~~~
+## 1 state (West Dutch only)
+## calculate relevant information (extract.X() not required for single basin)
+p1 <- beeswarm.f(WD)
+means <- urchin.mean.2(p1, p1)
+p1 <- mean.pts(p1, means[1])
+
+
+## plot West Dutch 
+y.2 <- 0.355
+
+p.WD <- ggplot(WD, aes(NMDS1)) + 
+  add.border + theme_bw() + x.scale + y.scale + my.theme + margin + 
+  annotation_custom(ggplotGrob(p1), xmin = (mixed.basin - width), xmax = (mixed.basin + width), ymin = 0, ymax = 2.5) +
+  annotation_custom(WD.title) + annotation_custom(M) + black.bar(x.2, y.2) + red.bar(x.2, y.2)
+#print(p.WD)
+
+
+## 2 states: NavFac, East Dutch, Daytona 
+## plot NavFac 
+y.2 <- 0.325
+y.3 <- 0.71
+
+p.NF <- ggplot(NF, aes(NMDS1)) + 
+  add.border + theme_bw() + x.scale + y.scale + my.theme + 
   theme(plot.margin = unit(c(.1,.1,.1,4.5), "lines")) +
- #geom_text(x=.33333,y=.1,label="M",size=4) +
- #geom_text(x=.66666,y=.1,label="B",size=4) +
-  annotation_custom(nf) +
-  annotation_custom(M) +
-  annotation_custom(B)
-
-print(NF_out)
-## END NavFac plot ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-
-
-
-
-## WestEnd plot ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## custom blank plot for final figure 
-WEK_kd <- ggplot(WEK, aes(NMDS1)) +
-  geom_density(adjust=0.8) 
-print(WEK_kd)
-  
-WEK_kd_print <- ggplot(WEK, aes(NMDS1)) + 
-  #geom_density() +
-  scale_x_continuous(limits = c(0, 1)) + scale_y_continuous(limits = c(0,2.5), expand = c(0,0)) + 
-  theme_bw() + ylab("Velocity") +
-  theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(),
-        plot.title = element_blank()) + theme(plot.margin = margin(r=.1, l=.1, b=.1, t=.1, unit = "pt")) + theme(legend.position="none") 
-
-
-
-## extract data from kernal density
-p<-ggplot_build(WEK_kd)
-head(p$data[[1]], 63)
-kd<-as.data.frame(p$data[[1]])
-
-
-## extract x and y of NMDS kernal density
-S1 <- kd$x
-S2 <- kd$y
-
-
-## calculate maximum y and associated x value 
-max_y1 <- which.max(S2)
-max_x1 <- S1[max_y1]
-
-
-## second max x and y value
-below <- max(S2[S1< -0.75])
-belowY<-which(S2==below)
-max_x2 <- S1[belowY]
-
-
-## calculate min between two states 
-trough <- min(S2[S1 < max_x1 & S1 > max_x2])
-ymin<-which(S2==trough)
-min_x1<-S1[ymin]
-
-
-## ID third max (for algae state)
-below2 <- max(S2[S1 > .5 & S1 < 1])
-belowY2<-which(S2==below2)
-max_x3 <- S1[belowY2]
-
-
-## calculate 2nd min 
-trough <- min(S2[S1 > max_x1 & S1 < max_x3])
-ymin2<-which(S2==trough)
-min_x2<-S1[ymin2]
-
-
-## check plot 
-WEK_kd +
-  geom_vline(xintercept=max_x1) +
-  geom_vline(xintercept=max_x2) +
-  geom_vline(xintercept=min_x1) +
-  geom_vline(xintercept=max_x3) +
-  geom_vline(xintercept=min_x2) 
-
-
-## new data frames
-WEK_urchin <- filter(WEK, NMDS1>min_x2)
-WEK_mixed <- filter(WEK, NMDS1<min_x2&NMDS1>min_x1)
-WEK_algae <- filter(WEK, NMDS1<min_x1)
-
-
-## Mixed state
-n1<-ggplot(WEK_mixed) +
-  geom_boxplot(data=WEK_mixed, aes(y=totalUrchin), fill="white",alpha=0, color="white", outlier.shape=NA) + ylim(0,1600) + 
-  geom_beeswarm(data=WEK_mixed, aes(x=0, y=totalUrchin), shape=21, fill ="#C2C2C2", color="black", size=.8,stroke=.35,
-                groupOnX = NULL, cex=4, priority = c("random")) +
-  theme_bw() +
-  theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA), plot.background = element_rect(fill = "transparent",colour = NA)) +
-  theme(plot.title = element_blank(),axis.title.y = element_blank(),axis.title.x = element_blank(),axis.text.y.left = element_blank(),axis.text.x = element_blank(),axis.ticks = element_blank(),legend.position = "none") 
-fig_dat <- ggplot_build(n1)$data[[1]]
-n1 <- n1 + geom_segment(data=fig_dat, aes(x=0-1.1, xend=0+1.1, y=middle, yend=middle), colour="black", size=1.5)
-n1 <- n1 + geom_segment(data=fig_dat, aes(x=0-1, xend=0+1, y=middle, yend=middle), colour="red", size=1)
-
-
-## Barren state
-n2<-ggplot(WEK_urchin) +
-  geom_boxplot(data=WEK_urchin, aes(y=totalUrchin), fill="white",alpha=0, color="white", outlier.shape=NA) + ylim(0,1600) + 
-  geom_beeswarm(data=WEK_urchin, aes(x=0, y=totalUrchin), shape=21, fill ="#C2C2C2", color="black", size=.8,stroke=.35,
-                groupOnX = NULL, cex=4, priority = c("random")) +
-  theme_bw() +
-  theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA), plot.background = element_rect(fill = "transparent",colour = NA)) +
-  theme(plot.title = element_blank(),axis.title.y = element_blank(),axis.title.x = element_blank(),axis.text.y.left = element_blank(),axis.text.x = element_blank(),axis.ticks = element_blank(),legend.position = "none") 
-fig_dat <- ggplot_build(n2)$data[[1]]
-n2 <- n2 + geom_segment(data=fig_dat, aes(x=0-1.1, xend=0+1.1, y=middle, yend=middle), colour="black", size=1.5)
-n2 <- n2 + geom_segment(data=fig_dat, aes(x=0-1, xend=0+1, y=middle, yend=middle), colour="red", size=1)
-
-
-## Algae state
-n3<-ggplot(WEK_algae) +
-  geom_boxplot(data=WEK_algae, aes(y=totalUrchin), fill="white",alpha=0, color="white", outlier.shape=NA) + ylim(0,1600) + 
-  geom_beeswarm(data=WEK_algae, aes(x=0, y=totalUrchin), shape=21, fill ="#C2C2C2", color="black", size=.8,stroke=.35,
-                groupOnX = NULL, cex=4, priority = c("random")) +
-  theme_bw() +
-  theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA), plot.background = element_rect(fill = "transparent",colour = NA)) +
-  theme(plot.title = element_blank(),axis.title.y = element_blank(),axis.title.x = element_blank(),axis.text.y.left = element_blank(),axis.text.x = element_blank(),axis.ticks = element_blank(),legend.position = "none") 
-fig_dat <- ggplot_build(n3)$data[[1]]
-n3 <- n3 + geom_segment(data=fig_dat, aes(x=0-1.1, xend=0+1.1, y=middle, yend=middle), colour="black", size=1.5)
-n3 <- n3 + geom_segment(data=fig_dat, aes(x=0-1, xend=0+1, y=middle, yend=middle), colour="red", size=1)
-
-
-## locations for label plotting 
-plot_xmin <- 0; plot_xmax <- 1; low2 <- 0.33333; high2 <- 0.66666; low3<-0.25; mid3<-0.5; high3<-0.75;
-width<-(plot_xmax-plot_xmin)/5.75
-
-
-## custom annotations
-wek <- grobTree(text_grob("West End Kelp", x=.3, y=.95, hjust=0, size = 13, color = "black"))
-A <- grobTree(text_grob("A", x=.25, y=.045, hjust=0, size = 13, color = "black"))
-M <- grobTree(text_grob("M", x=.475, y=.045, hjust=0, size = 13, color = "black"))
-B <- grobTree(text_grob("B", x=.725, y=.045, hjust=0, size = 13, color = "black"))
-
-
-## print final plot
-WEK_out <- WEK_kd_print + 
-  annotation_custom(ggplotGrob(n2), xmin = (high3-width), xmax = (high3+width), ymin = 0, ymax = 2.5) +
-  annotation_custom(ggplotGrob(n1), xmin = mid3-width, xmax = mid3+width, ymin = 0.0, ymax = 2.5) +
-  annotation_custom(ggplotGrob(n3), xmin = low3-width, xmax = low3+width, ymin = 0.0, ymax = 2.5) +
-  theme(plot.margin = unit(c(.1,.1,.1,.1), "lines")) +
-  annotation_custom(wek) +
-  annotation_custom(M) +
-  annotation_custom(B) +
-  annotation_custom(A)
-
-print(WEK_out)
-## END WestEnd Kelp ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-
-
-
-## Plot WestEnd Urchin ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## inspect kernal density
-WEU_kd <- ggplot(WEU, aes(NMDS1)) + geom_density(adjust = .8, color="#7b6800", size=.75,fill="lightgray",alpha=.7) +
-  scale_x_continuous(limits = c(-1.5, 1.2)) + scale_y_continuous(limits = c(0,2.5), expand = c(0,0)) + theme_bw() + ylab("Velocity") 
-print(WEU_kd)
-
-
-## empty plot for final product 
-WEU_print <- ggplot(WEU, aes(NMDS1)) + 
-  scale_x_continuous(limits = c(0, 1)) + scale_y_continuous(limits = c(0,2.5), expand = c(0,0)) + theme_bw() + ylab("Velocity") +
-  theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(),
-        plot.title = element_blank()) + theme(plot.margin = margin(r=.1, l=.1, b=.1, t=.1, unit = "pt")) + theme(legend.position="none") 
-
-
-## extract data from kernal density 
-p<-ggplot_build(WEU_kd)
-head(p$data[[1]], 63)
-kd<-as.data.frame(p$data[[1]])
-
-
-## x and y from NMDS kernal density
-S1 <- kd$x
-S2 <- kd$y
-
-
-## max y and x value from kernal density 
-max_y1 <- which.max(S2)
-max_x1 <- S1[max_y1]
-
-
-## 2nd y and x max value 
-below <- max(S2[S1 > .4])
-belowY<-which(S2==below)
-max_x2 <- S1[belowY]
-
-
-## calculate min value between states
-trough <- min(S2[S1 > max_x1 & S1 < max_x2])
-ymin<-which(S2==trough)
-min_x1<-S1[ymin]
-
-
-## id third max ot
-below2 <- max(S2[S1 < -.74])
-belowY2<-which(S2==below2)
-max_x3 <- S1[belowY2]
-
-
-## calculate 2nd min 
-trough <- min(S2[S1 > max_x3 & S1 < max_x1])
-ymin2<-which(S2==trough)
-min_x2<-S1[ymin2]
-
-
-## check plot 
-WEU_kd +
-  geom_vline(xintercept=max_x1) +
-  geom_vline(xintercept=max_x2) +
-  geom_vline(xintercept=min_x1) + 
-  geom_vline(xintercept=max_x3) +
-  geom_vline(xintercept=min_x2) 
-
-
-## new data frames for individual states
-WEU_urchin <- filter(WEU, NMDS1>min_x1)
-WEU_mixed <- filter(WEU, NMDS1<min_x1&NMDS1>min_x2)
-WEU_algae <- filter(WEU, NMDS1<min_x2)
-
-
-## Mixed state
-n1<-ggplot(WEU_mixed) +
-  geom_boxplot(data=WEU_mixed, aes(y=totalUrchin), fill="#F7F7F7",alpha=0, color="white", outlier.shape=NA) + ylim(0,1600) + 
-  geom_beeswarm(data=WEU_mixed, aes(x=0, y=totalUrchin), shape=21, fill ="#C2C2C2", color="black", size=.8,stroke=.35,
-                groupOnX = NULL, cex=5, priority = c("random")) +
-  theme_bw() +
-  theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA), plot.background = element_rect(fill = "transparent",colour = NA)) +
-  theme(plot.title = element_blank(),axis.title.y = element_blank(),axis.title.x = element_blank(),axis.text.y.left = element_blank(),axis.text.x = element_blank(),axis.ticks = element_blank(),legend.position = "none") 
-fig_dat <- ggplot_build(n1)$data[[1]]
-n1 <- n1 + geom_segment(data=fig_dat, aes(x=0-1.1, xend=0+1.1, y=middle, yend=middle), colour="black", size=1.5)
-n1 <- n1 + geom_segment(data=fig_dat, aes(x=0-1, xend=0+1, y=middle, yend=middle), colour="red", size=1)
-
-
-## Barren state
-n2<-ggplot(WEU_urchin) +
-  geom_boxplot(data=WEU_urchin, aes(y=totalUrchin), fill="#F7F7F7",alpha=0, color="white", outlier.shape=NA) + ylim(0,1600) + 
-  geom_beeswarm(data=WEU_urchin, aes(x=0, y=totalUrchin), shape=21, fill ="#C2C2C2",color="black",size=.8,stroke=.35,
-                groupOnX = NULL, cex=5, priority = c("random")) +
-  theme_bw() +
-  theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA), plot.background = element_rect(fill = "transparent",colour = NA)) +
-  theme(plot.title = element_blank(),axis.title.y = element_blank(),axis.title.x = element_blank(),axis.text.y.left = element_blank(),axis.text.x = element_blank(),axis.ticks = element_blank(),legend.position = "none") 
-fig_dat <- ggplot_build(n2)$data[[1]]
-n2 <- n2 + geom_segment(data=fig_dat, aes(x=0-1.1, xend=0+1.1, y=middle, yend=middle), colour="black", size=1.5)
-n2 <- n2 + geom_segment(data=fig_dat, aes(x=0-1, xend=0+1, y=middle, yend=middle), colour="red", size=1)
-
-
-## Algae state
-n3<-ggplot(WEU_algae) +
-  geom_boxplot(data=WEU_algae, aes(y=totalUrchin), fill="#F7F7F7",alpha=0, color="white", outlier.shape=NA) + ylim(0,1600) + 
-  geom_beeswarm(data=WEU_algae, aes(x=0, y=totalUrchin), shape=21, fill ="#C2C2C2", color="black",size=.8,stroke=.35,
-                groupOnX = NULL, cex=5, priority = c("random")) +
-  theme_bw() +
-  theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA), plot.background = element_rect(fill = "transparent",colour = NA)) +
-  theme(plot.title = element_blank(),axis.title.y = element_blank(),axis.title.x = element_blank(),axis.text.y.left = element_blank(),axis.text.x = element_blank(),axis.ticks = element_blank(),legend.position = "none") 
-fig_dat <- ggplot_build(n3)$data[[1]]
-n3 <- n3 + geom_segment(data=fig_dat, aes(x=0-1.1, xend=0+1.1, y=middle, yend=middle), colour="black", size=1.5)
-n3 <- n3 + geom_segment(data=fig_dat, aes(x=0-1, xend=0+1, y=middle, yend=middle), colour="red", size=1)
-
-
-## point to plot labels 
-plot_xmin <- 0; plot_xmax <- 1; low2 <- 0.33333; high2 <- 0.66666; low3<-0.25; mid3<-0.5; high3<-0.75;
-width<-(plot_xmax-plot_xmin)/5.75
-
-
-## custom annotations
-weu <- grobTree(text_grob("West End Urchin", x=.3, y=.95, hjust=0, size = 13, color = "black"))
-A <- grobTree(text_grob("A", x=.25, y=.045, hjust=0, size = 13, color = "black"))
-M <- grobTree(text_grob("M", x=.475, y=.045, hjust=0, size = 13, color = "black"))
-B <- grobTree(text_grob("B", x=.725, y=.045, hjust=0, size = 13, color = "black"))
-
-
-## final plot 
-WEU_out <- WEU_print + 
-  annotation_custom(ggplotGrob(n2), xmin = (high3-width), xmax = (high3+width), ymin = 0, ymax = 2.5) +
-  annotation_custom(ggplotGrob(n1), xmin = mid3-width, xmax = mid3+width, ymin = 0.0, ymax = 2.5) +
-  annotation_custom(ggplotGrob(n3), xmin = low3-width, xmax = low3+width, ymin = 0.0, ymax = 2.5) +
-  theme(plot.margin = unit(c(.1,.1,.1,.1), "lines")) +
-  annotation_custom(weu) +
-  annotation_custom(M) +
-  annotation_custom(B) +
-  annotation_custom(A)
-
-print(WEU_out)
-## END WestEnd Urchin plot ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-
-
-
-## Daytona plot ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## check kernal density
-Day_kd <- ggplot(Day, aes(NMDS1)) +
-  geom_density()
-print(Day_kd)
-
-
-## setup final plot
-Day_kd_print <- ggplot(Day, aes(NMDS1)) +
-  scale_x_continuous(limits = c(0,1)) + scale_y_continuous(limits = c(0,2.5), expand = c(0,0)) + theme_bw() + ylab("Velocity") +
-  theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(),
-        plot.title = element_blank()) + theme(plot.margin = margin(r=.1, l=.1, b=.1, t=.1, unit = "pt")) + theme(legend.position="none") 
-
-
-## extract data from kernal density 
-p<-ggplot_build(Day_kd)
-head(p$data[[1]], 63)
-kd<-as.data.frame(p$data[[1]])
-
-
-### x and y of NMDS kernal density
-S1 <- kd$x; 
-S2 <- kd$y
-
-
-## x and y max value from kernal density 
-max_y1 <- which.max(S2); 
-max_x1 <- S1[max_y1]
-
-
-## id second max 
-below <- max(S2[S1>.5]);
-belowY<-which(S2==below); 
-max_x2 <- S1[belowY]
-
-
-## calculate min 
-trough <- min(S2[S1 > max_x1 & S1 < max_x2]); 
-ymin<-which(S2==trough); 
-min_x1<-S1[ymin]
-
-
-## check plot 
-ggplot(Day, aes(NMDS1)) + geom_density() + 
-  geom_vline(xintercept=max_x1) + 
-  geom_vline(xintercept=max_x2) +   
-  geom_vline(xintercept=min_x1)
-
-
-## new data frames
-Day_urchin <- filter(Day, NMDS1>min_x1); 
-Day_mixed <- filter(Day, NMDS1<min_x1)
-
-
-## Mixed state
-n1<-ggplot(Day_mixed) +
-  geom_boxplot(data=Day_mixed, aes(y=totalUrchin), fill="white",alpha=0, color="white", outlier.shape=NA) + ylim(0,2600) + 
-  geom_beeswarm(data=Day_mixed, aes(x=0, y=totalUrchin), shape=21, fill ="#C2C2C2", color="black", size=.8,stroke=.35,
-                groupOnX = NULL, cex=5, priority = c("random")) +
-  theme_bw() +
-  theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA), plot.background = element_rect(fill = "transparent",colour = NA)) +
-  theme(plot.title = element_blank(),axis.title.y = element_blank(),axis.title.x = element_blank(),axis.text.y.left = element_blank(),axis.text.x = element_blank(),axis.ticks = element_blank(),legend.position = "none") 
-fig_dat <- ggplot_build(n1)$data[[1]]
-n1 <- n1 + geom_segment(data=fig_dat, aes(x=0-1.1, xend=0+1.1, y=middle, yend=middle), colour="black", size=1.5)
-n1 <- n1 + geom_segment(data=fig_dat, aes(x=0-1, xend=0+1, y=middle, yend=middle), colour="red", size=1)
-
-
-## Barren state
-n2<-ggplot(Day_urchin) +
-  geom_boxplot(data=Day_urchin, aes(y=totalUrchin), fill="white",alpha=0, color="white", outlier.shape=NA) + ylim(0,2600) + 
-  geom_beeswarm(data=Day_urchin, aes(x=0, y=totalUrchin), shape=21, fill ="#C2C2C2", color="black", size=.8,stroke=.35,
-                groupOnX = NULL, cex=5, priority = c("random")) +
-  theme_bw() +
-  theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA), plot.background = element_rect(fill = "transparent",colour = NA)) +
-  theme(plot.title = element_blank(),axis.title.y = element_blank(),axis.title.x = element_blank(),axis.text.y.left = element_blank(),axis.text.x = element_blank(),axis.ticks = element_blank(),legend.position = "none") 
-fig_dat <- ggplot_build(n2)$data[[1]]
-n2 <- n2 + geom_segment(data=fig_dat, aes(x=0-1.1, xend=0+1.1, y=middle, yend=middle), colour="black", size=1.5)
-n2 <- n2 + geom_segment(data=fig_dat, aes(x=0-1, xend=0+1, y=middle, yend=middle), colour="red", size=1)
-
-
-## custom label positioning 
-plot_xmin <- 0; plot_xmax <- 1; low2 <- 0.33333; high2 <- 0.66666; low3<-0.25; mid3<-0.5; high3<-0.75;
-width<-(plot_xmax-plot_xmin)/5.75
-
-
-## custom annotations 
-dy <- grobTree(text_grob("Daytona", x=.4, y=.95, hjust=0, size = 13, color = "black"))
-M <- grobTree(text_grob("M", x=.33333, y=.045, hjust=0, size = 13, color = "black"))
-B <- grobTree(text_grob("B", x=.63333, y=.045, hjust=0, size = 13, color = "black"))
-
-
-## final plot 
-Day_out<-Day_kd_print + 
-  annotation_custom(ggplotGrob(n2), xmin = (high2-width), xmax = (high2+width), ymin = 0, ymax = 2.5) +
-  annotation_custom(ggplotGrob(n1), xmin = low2-width, xmax = low2+width, ymin = 0.0, ymax = 2.5) +
-  theme(plot.margin = unit(c(.1,.1,.1,.1), "lines")) +
-  annotation_custom(dy) +
-  annotation_custom(M) +
-  annotation_custom(B) 
-
-print(Day_out)
-## END Daytona plot ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-
-
-
-## East Dutch plot ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## inspect kernal density
-ED_kd <- ggplot(ED, aes(NMDS1)) +
-  geom_density()
-print(ED_kd)
-
-
-## setup final plot 
-ED_kd_print <- ggplot(ED, aes(NMDS1)) + 
-  scale_x_continuous(limits = c(0,1)) + scale_y_continuous(limits = c(0,2.5), expand = c(0,0)) + theme_bw() + ylab("Velocity") +
-  theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(),
-        plot.title = element_blank()) + theme(plot.margin = margin(r=.1, l=.1, b=.1, t=.1, unit = "pt")) + theme(legend.position="none") 
-
-
-## extract data from kernal density 
-p<-ggplot_build(ED_kd)
-head(p$data[[1]], 63)
-kd<-as.data.frame(p$data[[1]])
-
-
-### x and y of NMDS kernal density
-S1 <- kd$x; 
-S2 <- kd$y
-
-
-## maX value of kernal y; corresponds to what value X
-max_y1 <- which.max(S2); 
-max_x1 <- S1[max_y1]
-
-
-## id second max 
-below <- max(S2[S1 < -0.5]);
-belowY<-which(S2==below); 
-max_x2 <- S1[belowY]
-
-
-## calculate min 
-trough <- min(S2[S1 < max_x1 & S1 > max_x2]); 
-ymin<-which(S2==trough); 
-min_x1<-S1[ymin]
-
-
-## check plot 
-ggplot(ED, aes(NMDS1)) + geom_density() + 
-  geom_vline(xintercept=max_x1) + 
-  geom_vline(xintercept=max_x2) +   
-  geom_vline(xintercept=min_x1)
-
-
-## data frames
-ED_mixed <- filter(ED, NMDS1>min_x1); 
-ED_algae <- filter(ED, NMDS1<min_x1)
-
-
-## Mixed state
-n1<-ggplot(ED) +
-  geom_boxplot(data=ED_mixed, aes(y=totalUrchin), fill="white",alpha=0, color="white", outlier.shape=NA) + ylim(0,1600) + 
-  geom_beeswarm(data=ED_mixed, aes(x=0, y=totalUrchin), shape=21, fill ="#C2C2C2", color="black", size=.8,stroke=.35,
-                groupOnX = NULL, cex=5, priority = c("random")) +
-  theme_bw() +
-  theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA), plot.background = element_rect(fill = "transparent",colour = NA)) +
-  theme(plot.title = element_blank(),axis.title.y = element_blank(),axis.title.x = element_blank(),axis.text.y.left = element_blank(),axis.text.x = element_blank(),axis.ticks = element_blank(),legend.position = "none") 
-fig_dat <- ggplot_build(n1)$data[[1]]
-n1 <- n1 + geom_segment(data=fig_dat, aes(x=0-1.1, xend=0+1.1, y=middle, yend=middle), colour="black", size=1.5)
-n1 <- n1 + geom_segment(data=fig_dat, aes(x=0-1, xend=0+1, y=middle, yend=middle), colour="red", size=1)
-
-
-## Algae state
-n2<-ggplot(ED) +
-  geom_boxplot(data=ED_algae, aes(y=totalUrchin), fill="white",alpha=0, color="white", outlier.shape=NA) + ylim(0,1600) + 
-  geom_beeswarm(data=ED_algae, aes(x=0, y=totalUrchin), shape=21, fill ="#C2C2C2", color="black", size=.8,stroke=.35,
-                groupOnX = NULL, cex=5, priority = c("random")) +
-  theme_bw() +
-  theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA), plot.background = element_rect(fill = "transparent",colour = NA)) +
-  theme(plot.title = element_blank(),axis.title.y = element_blank(),axis.title.x = element_blank(),axis.text.y.left = element_blank(),axis.text.x = element_blank(),axis.ticks = element_blank(),legend.position = "none") 
-fig_dat <- ggplot_build(n2)$data[[1]]
-n2 <- n2 + geom_segment(data=fig_dat, aes(x=0-1.1, xend=0+1.1, y=middle, yend=middle), colour="black", size=1.5)
-n2 <- n2 + geom_segment(data=fig_dat, aes(x=0-1, xend=0+1, y=middle, yend=middle), colour="red", size=1)
-
-
-## setup annotation locations 
-plot_xmin <- 0; plot_xmax <- 1; low2 <- 0.33333; high2 <- 0.66666; low3<-0.25; mid3<-0.5; high3<-0.75;
-width<-(plot_xmax-plot_xmin)/5.75
-
-
-## custom annotations 
-ed <- grobTree(text_grob("East Dutch", x=.35, y=.95, hjust=0, size = 13, color = "black"))
-M <- grobTree(text_grob("M", x=.33333, y=.045, hjust=0, size = 13, color = "black"))
-B <- grobTree(text_grob("B", x=.63333, y=.045, hjust=0, size = 13, color = "black"))
-
-
-## final plot
-ED_out <- ED_kd_print + 
-  annotation_custom(ggplotGrob(n1), xmin = high2-width, xmax = high2+width, ymin = 0.0, ymax = 2.5) +
-  annotation_custom(ggplotGrob(n2), xmin = low2-width, xmax = low2+width, ymin = 0.0, ymax = 2.5) +
-  theme(plot.margin = unit(c(.1,.1,.1,.1), "lines")) +
-  annotation_custom(ed) +
-  annotation_custom(M) +
-  annotation_custom(B) 
-
-print(ED_out)
-## END East Dutch plot ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-
-
-
-## Plot West Dutch ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-WD_kd <- ggplot(WD, aes(NMDS1)) +
-  geom_density()
-print(WD_kd)
-
-
-WD_kd_print <- ggplot(WD, aes(NMDS1)) + 
-  scale_x_continuous(limits = c(0, 1)) + scale_y_continuous(limits = c(0,2.5), expand = c(0,0)) + theme_bw() + ylab("Velocity") +
-  theme(panel.border = element_rect(color="gray50"), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(),
-        plot.title = element_blank()) + theme(plot.margin = margin(r=.1, l=.1, b=.1, t=.1, unit = "pt")) + theme(legend.position="none") 
-
-
-## single, Mixed state
-n1<-ggplot(WD) +
-  geom_boxplot(data=WD, aes(x=0,y=totalUrchin), fill="white",alpha=0, color="white", outlier.shape=NA) + ylim(0,1600) + 
-  geom_beeswarm(data=WD, aes(x=0, y=totalUrchin), shape=21, fill ="#C2C2C2", color="black", size=.8,stroke=.35,
-                groupOnX = NULL, cex=5, priority = c("random")) +
-  theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA), plot.background = element_rect(fill = "transparent",colour = NA)) +
-  theme(plot.title = element_blank(),axis.title.y = element_blank(),axis.title.x = element_blank(),axis.text.y.left = element_blank(),axis.text.x = element_blank(),axis.ticks = element_blank(),legend.position = "none") 
-fig_dat <- ggplot_build(n1)$data[[1]]
-n1 <- n1 + geom_segment(data=fig_dat, aes(x=0-1.1, xend=0+1.1, y=middle, yend=middle), colour="black", size=1.5)
-n1 <- n1 + geom_segment(data=fig_dat, aes(x=0-1, xend=0+1, y=middle, yend=middle), colour="red", size=1)
-
-
-## custom annotation locations 
-plot_xmin <- 0; plot_xmax <- 1; low2 <- 0.33333; high2 <- 0.66666; low3<-0.25; mid3<-0.5; high3<-0.75;
-width<-(plot_xmax-plot_xmin)/5.75
-
-
-## custom annotations 
-wd <- grobTree(text_grob("West Dutch", x=.35, y=.95, hjust=0, size = 13, color = "black"))
-M <- grobTree(text_grob("M", x=.48, y=.045, hjust=0, size = 13, color = "black"))
-
-
-## final plot
-WD_out <- WD_kd_print + 
-  annotation_custom(ggplotGrob(n1), xmin = mid3-width, xmax = mid3+width, ymin = 0.0, ymax = 2.5) +
-  theme(plot.margin = unit(c(.1,.1,.1,.1), "lines")) +
-  annotation_custom(wd) +
-  annotation_custom(M) 
-
-print(WD_out)
-## END West Dutch plot ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-
-
-
-## Aggregate all plots for final ms figure ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  annotation_custom(ggplotGrob(NF_figs[1][[1]]), xmin = (urchin.basin - width), xmax = (urchin.basin + width), ymin = 0, ymax = 2.5) +
+  annotation_custom(ggplotGrob(NF_figs[2][[1]]), xmin = (mixed.basin - width), xmax = (mixed.basin + width), ymin = 0, ymax = 2.5) +
+  annotation_custom(NF.title) + annotation_custom(M) + annotation_custom(B) +
+  black.bar(x.2, y.2) + red.bar(x.2, y.2) + black.bar(x.3, y.3) + red.bar(x.3, y.3) 
+#print(p.NF)
+
+
+## plot East Dutch 
+y.1 <- 0.21
+y.2 <- 0.35
+
+p.ED <- ggplot(ED, aes(NMDS1)) + 
+  add.border + theme_bw() + x.scale + y.scale + my.theme + margin +
+  annotation_custom(ggplotGrob(ED_figs[1][[1]]), xmin = (mixed.basin - width), xmax = (mixed.basin + width), ymin = 0, ymax = 2.5) +
+  annotation_custom(ggplotGrob(ED_figs[2][[1]]), xmin = (algae.basin - width), xmax = (algae.basin + width), ymin = 0, ymax = 2.5) +
+  annotation_custom(ED.title) + annotation_custom(M) + annotation_custom(A) +
+  black.bar(x.1, y.1) + red.bar(x.1, y.1) + black.bar(x.2, y.2) + red.bar(x.2, y.2) 
+#print(p.ED)
+
+
+## plot Daytona 
+y.2 <- 0.57
+y.3 <- 0.825
+
+p.Day <- ggplot(Day, aes(NMDS1)) + 
+  add.border + theme_bw() + x.scale + y.scale + my.theme + margin + 
+  annotation_custom(ggplotGrob(Day_figs[1][[1]]), xmin = (urchin.basin - width), xmax = (urchin.basin + width), ymin = 0, ymax = 2.5) +
+  annotation_custom(ggplotGrob(Day_figs[2][[1]]), xmin = (mixed.basin - width), xmax = (mixed.basin + width), ymin = 0, ymax = 2.5) +
+  annotation_custom(Day.title) + annotation_custom(M) + annotation_custom(B) +
+  black.bar(x.2, y.2) + red.bar(x.2, y.2) + black.bar(x.3, y.3) + red.bar(x.3, y.3) 
+#print(p.Day)
+
+
+## 3 states: West End Urchin, West End Kelp 
+## plot West End Kelp 
+y.1 <- 0.20575
+y.2 <- 0.31
+y.3 <- 0.685
+
+p.WEK <- ggplot(WEK, aes(NMDS1)) + 
+  add.border + theme_bw() + x.scale + y.scale + my.theme + margin + 
+  annotation_custom(ggplotGrob(WEK_figs[1][[1]]), xmin = (urchin.basin - width), xmax = (urchin.basin + width), ymin = 0, ymax = 2.5) +
+  annotation_custom(ggplotGrob(WEK_figs[2][[1]]), xmin = (mixed.basin - width), xmax = (mixed.basin + width), ymin = 0, ymax = 2.5) +
+  annotation_custom(ggplotGrob(WEK_figs[3][[1]]), xmin = (algae.basin - width), xmax = (algae.basin + width), ymin = 0, ymax = 2.5) +
+  black.bar(x.1, y.1) + red.bar(x.1, y.1) + black.bar(x.2, y.2) + red.bar(x.2, y.2) + black.bar(x.3, y.3) + red.bar(x.3, y.3) + 
+  annotation_custom(WEK.title) + annotation_custom(A) + annotation_custom(M) + annotation_custom(B) 
+#print(p.WEK)
+
+
+## plot West End Urchin
+y.1 <- 0.20575
+y.2 <- 0.365
+y.3 <- 0.85
+
+p.WEU <- ggplot(WEU, aes(NMDS1)) + 
+  add.border + theme_bw() + x.scale + y.scale + my.theme + margin + 
+  annotation_custom(ggplotGrob(WEU_figs[1][[1]]), xmin = (urchin.basin - width), xmax = (urchin.basin + width), ymin = 0, ymax = 2.5) +
+  annotation_custom(ggplotGrob(WEU_figs[2][[1]]), xmin = (mixed.basin - width), xmax = (mixed.basin + width), ymin = 0, ymax = 2.5) +
+  annotation_custom(ggplotGrob(WEU_figs[3][[1]]), xmin = (algae.basin - width), xmax = (algae.basin + width), ymin = 0, ymax = 2.5) +
+  black.bar(x.1, y.1) + red.bar(x.1, y.1) + black.bar(x.2, y.2) + red.bar(x.2, y.2) + black.bar(x.3, y.3) + red.bar(x.3, y.3) + 
+  annotation_custom(WEU.title) + annotation_custom(A) + annotation_custom(M) + annotation_custom(B) 
+#print(p.WEU)
+## END final arrangement of individual site-level figures ~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
+
+## plot all six figures ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 graphics.off()
 windows(h=3,w=15, record=TRUE)
 
 
 ## custom axis for later call 
-new<-grid.yaxis(at=c(0,400,800,1200,1600), 
+new<-grid.yaxis(at=c(0,650,1300,1950,2600), 
                 vp=vpStack(viewport(width=unit(2,"lines")),
-                           viewport(x=1, yscale = c(-50,1050), just="left")))
+                           viewport(x=1, yscale = c(-130,1700), just="left")))
 
 
 ## aggregate all plot 
-p2 <- ggarrange(tag_facet(NF_out +
-                            facet_wrap(~"NMDS1"), 
-                          tag_pool = "a"),
-                tag_facet(WEK_out +
-                            facet_wrap(~"NMDS1"),
-                          tag_pool = "b"),
-                tag_facet(WEU_out +
-                            facet_wrap(~"NMDS1"),
-                          tag_pool = "c"),
-                tag_facet(Day_out +
-                            facet_wrap(~"NMDS1"),
-                          tag_pool = "d"),
-                tag_facet(ED_out +
-                            facet_wrap(~"NMDS1"),
-                          tag_pool = "e" ),
-                tag_facet(WD_out +
-                            facet_wrap(~"NMDS1"),
-                          tag_pool = "f" ),
+p2 <- ggarrange(tag_facet(p.NF + facet_wrap(~"NMDS1"), tag_pool = "a"),
+                tag_facet(p.WEK + facet_wrap(~"NMDS1"), tag_pool = "b"),
+                tag_facet(p.WEU + facet_wrap(~"NMDS1"), tag_pool = "c"),
+                tag_facet(p.Day + facet_wrap(~"NMDS1"), tag_pool = "d"),
+                tag_facet(p.ED + facet_wrap(~"NMDS1"), tag_pool = "e" ),
+                tag_facet(p.WD + facet_wrap(~"NMDS1"), tag_pool = "f" ),
                 nrow=1)
 
 
@@ -758,6 +447,60 @@ pushViewport(sample_vp)
 grid.draw(new)
 grid.draw(name)
 popViewport()   
-## END OF SCRIPT ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## END of final figure~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
+
+
+
+## EXTRA code ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## This code walks through the steps that's otherwise wrapped within the apply.f() function
+## running this code allows one to double check the placement of "peaks" and "valleys", 
+## the max and min pts along a kernal density, identified with extract.2() or extract.3(), for 
+## 2 or 3 basins of attraction, respectively
+## uncomment the lines with a single "#"
+
+## apply functions to extract kernal density peaks/troughs and plot 
+## apply function and store relevant output 
+#borders <- extract.2(NF$NMDS1, 0)
+
+
+## apply function and examine plot 
+#graphics.off()
+#windows(h=5,w=5, record=TRUE)
+
+
+#a1 <- plot.borders(df = NF, dat = NF$NMDS1, list = borders)
+#print(a1)
+
+
+## create new data frames containing data for the barren and mixed states 
+#NF_urchin <- filter(NF, NMDS1 > borders[3])
+#NF_mixed <- filter(NF, NMDS1 < borders[3])
+
+
+## create beeswarm cluster from the mixed state
+#p1 <- beeswarm.f(NF_mixed)
+#p2 <- beeswarm.f(NF_urchin)
+
+
+## extract means
+#means <- urchin.mean.2(p1, p2)
+
+
+## add mean lines 
+#p1 <- mean.pts(p1, means[1])
+#p2 <- mean.pts(p2, means[2])
+
+
+## check plots
+#print(p1)
+#print(p2)
+## END extra code ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## END of script ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
