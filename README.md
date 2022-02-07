@@ -1,4 +1,4 @@
-# Substrate_Complexity
+# SubstrateComplexity
 
 Data, code, and figures associated with *Kelp forest dynamics controlled by substrate complexity* investigating how substrate complexity -- the rugosity of the underlying seafloor -- associates with 38 years of kelp forest community dynamics from six sites around San Nicolas Island (SNI) off the coast of Southern California.  
 
