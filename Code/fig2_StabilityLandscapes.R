@@ -1,4 +1,3 @@
-
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 ## Figure 2 for SubstrateComplexity ms ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 ## Modified Jan 31 2022; zhr ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
@@ -270,20 +269,16 @@ loess_WD <- apply.loess(WD$Vel, WD$MidPt, WD)
 NF_kd <- ggplot(NF, aes(NMDS1, group = TRANSECT, fill=TRANSECT)) +
   geom_density(adjust = den.adjust, position="stack", color=NA) + ylab("Negative Potential") + xlab("NavFac") +
   theme_bw() + NF.fill + den.x.axis + den.y.axis + my.theme + den.margins + x.title + y.title + NF.R1
-
-print(NF_kd)
 ## plot velocities and combine kernal densities and velocities into single figure 
 vel_NF <- ggplot(NF, aes(x=MidPt, y=loess_NF)) + 
   black.line + white.line + theme_bw() + x.axis + loess.ylim + loess.theme 
 NF_both <- NF_kd + annotation_custom(ggplotGrob(vel_NF))
 
-print(NF_both)
 
 ## WestEnd Kelp kernal densities 
 WEK_kd <- ggplot(WEK, aes(NMDS1, group = TRANSECT, fill=TRANSECT)) +
   geom_density(adjust = 0.8, position="stack", color=NA) + xlab("West End Kelp") +
   theme_bw() + WEK.fill + den.x.axis + den.y.axis + my.theme + den.margins + x.title + no.y.title + WEK.R1
-
 ## plot velocities and combine kernal densities and velocities into single figure 
 vel_WEK <- ggplot(WEK, aes(x=MidPt, y=loess_WEK)) + 
   black.line + white.line + theme_bw() + x.axis + loess.ylim + loess.theme 
@@ -328,22 +323,6 @@ WD_kd <- ggplot(WD, aes(NMDS1, group = TRANSECT, fill=TRANSECT)) +
 vel_WD <- ggplot(WD, aes(x=MidPt, y=loess_WD)) + 
   black.line + white.line + theme_bw() + x.axis + loess.ylim + loess.theme 
 WD_both <- WD_kd + annotation_custom(ggplotGrob(vel_WD))
-
-## check velocities and kernal densities 
-#graphics.off()
-#windows(h=8,w=48, record = TRUE)
-
-
-#tr3 <- ggarrange(NF_both, WEK_both, WEU_both, Day_both, ED_both, WD_both, nrow=1)
-
-#tr3 <- ggarrange(tag_facet(NF_both + facet_wrap(~"NMDS1"), tag_pool = "a"),
-#                 tag_facet(WEK_both + facet_wrap(~"NMDS1"), tag_pool = "b"),
-#                 tag_facet(WEU_both + facet_wrap(~"NMDS1"), tag_pool = "c"),
-#                 tag_facet(Day_both + facet_wrap(~"NMDS1"), tag_pool = "d"),
-#                 tag_facet(ED_both + facet_wrap(~"NMDS1"), tag_pool = "e" ),
-#                 tag_facet(WD_both + facet_wrap(~"NMDS1"), tag_pool = "f"),
-#                 nrow=1)
-#print(tr3)
 ## END kernal density and velocity plots ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -355,9 +334,6 @@ library(plyr)
 
 setwd("D:/OneDrive/Active_Projects/SubstrateComplexity/Data")
 relief_dat <- read.csv("SubstrateRugosity.csv", header = TRUE)
-
-#graphics.off()
-#windows(h=6,w=6, record=TRUE)
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -484,12 +460,6 @@ p.WD <- ggplot(WD_rug, aes(SITE, mean)) +
   geom_errorbar(aes(x=TRANSECT, ymin=mean-se, ymax=mean+se), width=sd.width) +
   geom_point(aes(x=TRANSECT, y=mean, fill=TRANSECT), size = pt.size, shape=pt.shape, color=pt.col) +
   theme_bw() + rug.theme + WD.fill + rug.y.scale + no.y.title + no.x.title + WD.R3
-
-## Aggregate all plots into single figure 
-#graphics.off()
-#windows(h=4,w=24, record=TRUE)
-
-#n11 <- ggarrange(p.NF, p.WEK, p.WEU, p.Day, p.ED, p.WD, nrow=1)
 ## END plots for fig2 row 3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -503,20 +473,7 @@ fig2 <- ggarrange(NF_both, WEK_both, WEU_both, Day_both, ED_both, WD_both,
                   NF_tr, WEK_tr, WEU_tr, Day_tr, ED_tr, WD_tr, 
                   p.NF, p.WEK, p.WEU, p.Day, p.ED, p.WD, 
                   nrow=3, ncol=6)
-
-
-print(fig2)
-
-
-
-
-
-
-
-
-
-
-
+## END of plotting all subfigs ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 

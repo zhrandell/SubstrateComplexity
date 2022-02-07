@@ -131,6 +131,22 @@ B <- state.label("B", urchin.basin - .04)
 x.1 <- 0.09
 x.2 <- 0.438
 x.3 <- 0.79
+
+## information to create subfigure labels 
+lab.x <- .04
+lab.y <- 2.35
+lab.size <- 8
+
+fig.panel <- function(x){
+  annotate("text", x = lab.x, lab.y, label=x, size = lab.size)
+}
+
+lab.A <- fig.panel("A")
+lab.B <- fig.panel("B")
+lab.C <- fig.panel("C")
+lab.D <- fig.panel("D")
+lab.E <- fig.panel("E")
+lab.F <- fig.panel("F")
 ## END custom graphical params ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -326,25 +342,6 @@ WEU_figs <- apply.3(WEU, WEU$NMDS1, -0.75, 0.5, WEU_urchin, WEU_mixed, WEU_algae
 
 
 
-lab.x <- .04
-lab.y <- 2.35
-lab.size <- 8
-
-
-fig.panel <- function(x){
-  annotate("text", x = lab.x, lab.y, label=x, size = lab.size)
-}
-
-
-lab.A <- fig.panel("A")
-lab.B <- fig.panel("B")
-lab.C <- fig.panel("C")
-lab.D <- fig.panel("D")
-lab.E <- fig.panel("E")
-lab.F <- fig.panel("F")
-
-
-
 
 ## aggregate all information into final site-level figures ~~~~~~~~~~~~~~~~~~~~~
 ## 1 state (West Dutch only)
@@ -451,17 +448,7 @@ new<-grid.yaxis(at=c(0,650,1300,1950,2600),
                            viewport(x=1, yscale = c(-130,1700), just="left")))
 
 
-## aggregate all plot 
-#p2 <- ggarrange(tag_facet(p.NF + facet_wrap(~"NMDS1"), tag_pool = "a"),
-#                tag_facet(p.WEK + facet_wrap(~"NMDS1"), tag_pool = "b"),
-#                tag_facet(p.WEU + facet_wrap(~"NMDS1"), tag_pool = "c"),
-#                tag_facet(p.Day + facet_wrap(~"NMDS1"), tag_pool = "d"),
-#                tag_facet(p.ED + facet_wrap(~"NMDS1"), tag_pool = "e" ),
-#                tag_facet(p.WD + facet_wrap(~"NMDS1"), tag_pool = "f" ),
-#                nrow=1)
-
-
-
+## all figs 
 fig4 <- ggarrange(p.NF, p.WEK, p.WEU, p.Day, p.ED, p.WD, nrow=1)
 
 ## add axis legend 
@@ -473,27 +460,9 @@ pushViewport(sample_vp)
 grid.draw(new)
 grid.draw(name)
 popViewport()
-
-
-
-
-setwd(figLocation)
-
-
-
-
-ggplot2::ggsave(filename="fig4-urchdens.pdf", 
-       plot=fig4,
-       device=cairo_pdf, 
-       height=3,
-       width=15,
-       units="in", 
-       useDingbats=FALSE)
-
-
 ## END of final figure~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-print(fig4)
+
 
 
 
