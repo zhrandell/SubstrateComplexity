@@ -7,6 +7,9 @@ rm(list = ls())
 
 library(egg)
 library(tidyverse)
+library(grid)
+library(ggpubr)
+library(gtable)
 
 
 ## rugosity data 
@@ -117,7 +120,7 @@ p1 <- ggplot(dat, aes(x = NMDS1, y = NMDS2)) +
   theme(axis.title.x = element_blank(), axis.title.y = element_text(size=14), 
         axis.text = element_text(size=12), axis.ticks = element_blank(), 
         plot.margin = margin(r=.1, l=.1, b=2, t=20, unit = "pt")) +
-  annotate("text", x=-1.5, y=1.4, label="a)", size=5.75)
+  annotate("text", x=-1.5, y=1.4, label="A", size=8)
 
 print(p1)
 
@@ -165,7 +168,7 @@ p4 <- ggplot(dat, aes(x = NMDS1, y = NMDS2)) +
   coord_fixed() + theme_bw() + ptSize + myCols + myTheme + xlim(xMin, xMax) + ylim(yMin, yMax) +
   guides(color = FALSE, size = guide_legend("Purple Urchin", order = 1, fill="black")) + 
   legendTheme + bottom + theme(plot.margin = margin(r=.1, l=.1, b=2, t=20, unit = "pt")) +
-  annotate("text", x=-1.5, y=1.4, label="b)", size=5.75)
+  annotate("text", x=-1.5, y=1.4, label="B", size=8)
 
 
 
@@ -219,7 +222,7 @@ p6 <- ggplot(dat, aes(x = NMDS1, y = NMDS2)) +
   guides(color = FALSE, size = guide_legend("Rugosity", order = 1, fill="black")) + legendTheme + 
   geom_segment(aes(x=0, y=0, xend=0.158, yend=0.987), color="black",lwd=1, arrow = arrow(length = unit(0.02, "npc"))) +
   theme(plot.margin = margin(r=.1, l=.1, b=2, t=20, unit = "pt")) +
-  annotate("text", x=-1.5, y=1.4, label="c)", size=5.75)
+  annotate("text", x=-1.5, y=1.4, label="C", size=8)
 
 
 

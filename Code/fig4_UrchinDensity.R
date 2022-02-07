@@ -24,7 +24,10 @@ library(pryr)
 library(ggbeeswarm)
 library(tidyverse)
 
-setwd("D:/OneDrive/Active_Projects/SubstrateComplexity/Data")
+dataLocation <- "D:/OneDrive/Active_Projects/SubstrateComplexity/Data"
+figLocation <- "D:/OneDrive/Active_Projects/SubstrateComplexity/Figures/ms_figs"
+
+setwd(dataLocation)
 dat <- read.csv("NMDS_coordinates.csv", header = TRUE)
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -91,7 +94,8 @@ width <- (plot.xmax - plot.xmin)/scaler
 label.y <- 0.045; 
 title.x <- 0.4; 
 title.y <- 0.95;
-title.size <- 13;
+title.size <- 14;
+text.size <- 14;
 title.col <- "black";
 hjust <- 0;
 
@@ -104,17 +108,17 @@ site.name <- function(title, title.x){
 
 ## create a letter label for each state 
 state.label <- function(label, x.position){
-  grobTree(text_grob(label, x=x.position, y=label.y, hjust=hjust, size=title.size, color=title.col))
+  grobTree(text_grob(label, x=x.position, y=label.y, hjust=hjust, size=text.size, color=title.col))
 }
 
 
 ## call function to create site titles 
 NF.title <- site.name("NavFac", title.x)
-WEK.title <- site.name("West End Kelp", title.x-.1)
-WEU.title <- site.name("West End Urchin", title.x-.1)
-Day.title <- site.name("Daytona", title.x)
-ED.title <- site.name("East Dutch", title.x)
-WD.title <- site.name("West Dutch", title.x)
+WEK.title <- site.name("West End Kelp", title.x-.15)
+WEU.title <- site.name("West End Urchin", title.x-.175)
+Day.title <- site.name("Daytona", title.x-.05)
+ED.title <- site.name("East Dutch", title.x-.05)
+WD.title <- site.name("West Dutch", title.x-.05)
 
 
 ## create state labels and adjust position 
@@ -322,6 +326,25 @@ WEU_figs <- apply.3(WEU, WEU$NMDS1, -0.75, 0.5, WEU_urchin, WEU_mixed, WEU_algae
 
 
 
+lab.x <- .04
+lab.y <- 2.35
+lab.size <- 8
+
+
+fig.panel <- function(x){
+  annotate("text", x = lab.x, lab.y, label=x, size = lab.size)
+}
+
+
+lab.A <- fig.panel("A")
+lab.B <- fig.panel("B")
+lab.C <- fig.panel("C")
+lab.D <- fig.panel("D")
+lab.E <- fig.panel("E")
+lab.F <- fig.panel("F")
+
+
+
 
 ## aggregate all information into final site-level figures ~~~~~~~~~~~~~~~~~~~~~
 ## 1 state (West Dutch only)
@@ -337,7 +360,7 @@ y.2 <- 0.355
 p.WD <- ggplot(WD, aes(NMDS1)) + 
   add.border + theme_bw() + x.scale + y.scale + my.theme + margin + 
   annotation_custom(ggplotGrob(p1), xmin = (mixed.basin - width), xmax = (mixed.basin + width), ymin = 0, ymax = 2.5) +
-  annotation_custom(WD.title) + annotation_custom(M) + black.bar(x.2, y.2) + red.bar(x.2, y.2)
+  annotation_custom(WD.title) + annotation_custom(M) + black.bar(x.2, y.2) + red.bar(x.2, y.2) + lab.F
 #print(p.WD)
 
 
@@ -352,8 +375,8 @@ p.NF <- ggplot(NF, aes(NMDS1)) +
   annotation_custom(ggplotGrob(NF_figs[1][[1]]), xmin = (urchin.basin - width), xmax = (urchin.basin + width), ymin = 0, ymax = 2.5) +
   annotation_custom(ggplotGrob(NF_figs[2][[1]]), xmin = (mixed.basin - width), xmax = (mixed.basin + width), ymin = 0, ymax = 2.5) +
   annotation_custom(NF.title) + annotation_custom(M) + annotation_custom(B) +
-  black.bar(x.2, y.2) + red.bar(x.2, y.2) + black.bar(x.3, y.3) + red.bar(x.3, y.3) 
-#print(p.NF)
+  black.bar(x.2, y.2) + red.bar(x.2, y.2) + black.bar(x.3, y.3) + red.bar(x.3, y.3) + lab.A
+print(p.NF)
 
 
 ## plot East Dutch 
@@ -365,8 +388,8 @@ p.ED <- ggplot(ED, aes(NMDS1)) +
   annotation_custom(ggplotGrob(ED_figs[1][[1]]), xmin = (mixed.basin - width), xmax = (mixed.basin + width), ymin = 0, ymax = 2.5) +
   annotation_custom(ggplotGrob(ED_figs[2][[1]]), xmin = (algae.basin - width), xmax = (algae.basin + width), ymin = 0, ymax = 2.5) +
   annotation_custom(ED.title) + annotation_custom(M) + annotation_custom(A) +
-  black.bar(x.1, y.1) + red.bar(x.1, y.1) + black.bar(x.2, y.2) + red.bar(x.2, y.2) 
-#print(p.ED)
+  black.bar(x.1, y.1) + red.bar(x.1, y.1) + black.bar(x.2, y.2) + red.bar(x.2, y.2) + lab.E
+print(p.ED)
 
 
 ## plot Daytona 
@@ -378,7 +401,7 @@ p.Day <- ggplot(Day, aes(NMDS1)) +
   annotation_custom(ggplotGrob(Day_figs[1][[1]]), xmin = (urchin.basin - width), xmax = (urchin.basin + width), ymin = 0, ymax = 2.5) +
   annotation_custom(ggplotGrob(Day_figs[2][[1]]), xmin = (mixed.basin - width), xmax = (mixed.basin + width), ymin = 0, ymax = 2.5) +
   annotation_custom(Day.title) + annotation_custom(M) + annotation_custom(B) +
-  black.bar(x.2, y.2) + red.bar(x.2, y.2) + black.bar(x.3, y.3) + red.bar(x.3, y.3) 
+  black.bar(x.2, y.2) + red.bar(x.2, y.2) + black.bar(x.3, y.3) + red.bar(x.3, y.3) + lab.D
 #print(p.Day)
 
 
@@ -394,7 +417,7 @@ p.WEK <- ggplot(WEK, aes(NMDS1)) +
   annotation_custom(ggplotGrob(WEK_figs[2][[1]]), xmin = (mixed.basin - width), xmax = (mixed.basin + width), ymin = 0, ymax = 2.5) +
   annotation_custom(ggplotGrob(WEK_figs[3][[1]]), xmin = (algae.basin - width), xmax = (algae.basin + width), ymin = 0, ymax = 2.5) +
   black.bar(x.1, y.1) + red.bar(x.1, y.1) + black.bar(x.2, y.2) + red.bar(x.2, y.2) + black.bar(x.3, y.3) + red.bar(x.3, y.3) + 
-  annotation_custom(WEK.title) + annotation_custom(A) + annotation_custom(M) + annotation_custom(B) 
+  annotation_custom(WEK.title) + annotation_custom(A) + annotation_custom(M) + annotation_custom(B) + lab.B
 #print(p.WEK)
 
 
@@ -409,7 +432,7 @@ p.WEU <- ggplot(WEU, aes(NMDS1)) +
   annotation_custom(ggplotGrob(WEU_figs[2][[1]]), xmin = (mixed.basin - width), xmax = (mixed.basin + width), ymin = 0, ymax = 2.5) +
   annotation_custom(ggplotGrob(WEU_figs[3][[1]]), xmin = (algae.basin - width), xmax = (algae.basin + width), ymin = 0, ymax = 2.5) +
   black.bar(x.1, y.1) + red.bar(x.1, y.1) + black.bar(x.2, y.2) + red.bar(x.2, y.2) + black.bar(x.3, y.3) + red.bar(x.3, y.3) + 
-  annotation_custom(WEU.title) + annotation_custom(A) + annotation_custom(M) + annotation_custom(B) 
+  annotation_custom(WEU.title) + annotation_custom(A) + annotation_custom(M) + annotation_custom(B) + lab.C
 #print(p.WEU)
 ## END final arrangement of individual site-level figures ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -429,14 +452,17 @@ new<-grid.yaxis(at=c(0,650,1300,1950,2600),
 
 
 ## aggregate all plot 
-p2 <- ggarrange(tag_facet(p.NF + facet_wrap(~"NMDS1"), tag_pool = "a"),
-                tag_facet(p.WEK + facet_wrap(~"NMDS1"), tag_pool = "b"),
-                tag_facet(p.WEU + facet_wrap(~"NMDS1"), tag_pool = "c"),
-                tag_facet(p.Day + facet_wrap(~"NMDS1"), tag_pool = "d"),
-                tag_facet(p.ED + facet_wrap(~"NMDS1"), tag_pool = "e" ),
-                tag_facet(p.WD + facet_wrap(~"NMDS1"), tag_pool = "f" ),
-                nrow=1)
+#p2 <- ggarrange(tag_facet(p.NF + facet_wrap(~"NMDS1"), tag_pool = "a"),
+#                tag_facet(p.WEK + facet_wrap(~"NMDS1"), tag_pool = "b"),
+#                tag_facet(p.WEU + facet_wrap(~"NMDS1"), tag_pool = "c"),
+#                tag_facet(p.Day + facet_wrap(~"NMDS1"), tag_pool = "d"),
+#                tag_facet(p.ED + facet_wrap(~"NMDS1"), tag_pool = "e" ),
+#                tag_facet(p.WD + facet_wrap(~"NMDS1"), tag_pool = "f" ),
+#                nrow=1)
 
+
+
+fig4 <- ggarrange(p.NF, p.WEK, p.WEU, p.Day, p.ED, p.WD, nrow=1)
 
 ## add axis legend 
 name<-grid.text(label="total Urchin abundance", x=.01,y=.5,rot=90)
@@ -446,10 +472,28 @@ sample_vp <- viewport(x = .545, y = 0.3475, width = 1, height = .575, just = c("
 pushViewport(sample_vp)
 grid.draw(new)
 grid.draw(name)
-popViewport()   
+popViewport()
+
+
+
+
+setwd(figLocation)
+
+
+
+
+ggplot2::ggsave(filename="fig4-urchdens.pdf", 
+       plot=fig4,
+       device=cairo_pdf, 
+       height=3,
+       width=15,
+       units="in", 
+       useDingbats=FALSE)
+
+
 ## END of final figure~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
+print(fig4)
 
 
 
