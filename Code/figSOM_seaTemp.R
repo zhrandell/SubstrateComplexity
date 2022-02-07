@@ -1,5 +1,5 @@
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
-## SNI temperature data ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+## SNI temperature data Fig S5 in SubstrateComplexity ~~~~~~~~~~~~~~~~~~~~~~~ ##
 ## Modified May 25th 2021; zhr ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
@@ -10,26 +10,9 @@
 ## initiate ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 rm(list = ls())
 
-library(ggplot2)
-library(dplyr)
-library(vegan)
-library(MASS)
-library(fitdistrplus)
-library(gridExtra)
-library(RColorBrewer)
-library(ggpubr)
-library(egg)
-library(gtable)
-library(grid)
-library(magick)
-library(magrittr)
-library(here)
-library(pryr)
-library(ggbeeswarm)
-library(WaveletComp)
-library(magrittr)
+library(tidyverse)
 
-setwd("D:/OneDrive/Active_Projects/Substrate_Complexity/Data")
+setwd("D:/OneDrive/Active_Projects/SubstrateComplexity/Data")
 dat <- read.csv("SiteSpecificTemps.csv", header = TRUE)
 
 
@@ -58,43 +41,43 @@ windows(h=5,w=8, record=TRUE)
 dat$Site <- factor(dat$Site, levels=c("NavFac", "WestEnd", "Daytona", "EastDutch"))
 dat$logTemp <- log(dat$DegC)                   
 
+
 ## subset by site
-NF <- filter(dat, Site %in% c("NavFac"))
-WE <- filter(dat, Site %in% c("WestEnd"))
-Day <- filter(dat, Site %in% c("Daytona"))
-ED <- filter(dat, Site %in% c("EastDutch"))
-ED <- na.omit(ED)
+filter.f <- function(x){
+  t1 <- filter(dat, Site %in% c(x))
+  SU <- seq(from=1, to=length(t1$DegC), by=1)
+  out <- return(as.data.frame(cbind(SU, t1)))
+}
 
-## add SU to ease plotting the xaxis 
-NF$SU <- seq(from=1, to=length(NF$DegC), by=1)
-WE$SU <- seq(from=1, to=length(WE$DegC), by=1)
-Day$SU <- seq(from=1, to=length(Day$DegC), by=1)
-ED$SU <- seq(from=1, to=length(ED$DegC), by=1)
-
+NF <- filter.f("NavFac")
+WE <- filter.f("WestEnd")
+Day <- filter.f("Daytona")
+ED <- na.omit(filter.f("EastDutch"))
 newDat <- rbind(NF, WE, Day, ED)
+## END data formatting ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-## Plot entire time series ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+## Plot entire time series ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## custom color pal matching ms site colors. NF, blend(WEU & WEK), Day, ED
-pal_sites <- c("#BE2625", "#E88600", "#608341", "#00536f") 
-#pal_sites2 <- c("#BE2625", "#E88600", "#6f006b", "#00536f") #BE2625 used for tint and shade creation
+cols <- scale_color_manual(values=c("#BE2625", "#E88600", "#608341", "#00536f")) 
 
-graphics.off()
-windows(w=12,h=4,record=TRUE)
-
+x.breaks <- scale_x_continuous(n.breaks = 17, 
+                               labels=c("remove", "Nov 2015", "Mar 2016", "June 2016", "Oct 2016", "Jan 2017",
+                                         "May 2017", "Aug 2017", "Dec 2017", "Mar 2018", "July 2018", "Oct 2018", 
+                                         "Feb 2019", "May 2019","Sep 2019", ""))
+  
 
 ## all sites 
-p1 <- ggplot(newDat, aes(SU, DegC, color=Site, group=Site)) + my.theme +
-  geom_line(alpha=.5) + ylab("Degrees Celcius") + 
-  scale_colour_manual(values=pal_sites) +
-  scale_x_continuous(n.breaks = 17, labels=c("remove", "Nov 2015", 
-                                             "Mar 2016", "June 2016", "Oct 2016", "Jan 2017",
-                                             "May 2017", "Aug 2017", "Dec 2017", "Mar 2018",
-                                             "July 2018", "Oct 2018", "Feb 2019", "May 2019",
-                                             "Sep 2019", "")) +
+p1 <- ggplot(newDat, aes(SU, DegC, color=Site, group=Site)) +  
+  geom_line(alpha=.5) + ylab("Degrees Celcius") + my.theme + cols + x.breaks + 
   theme(axis.text.x = element_text(angle=45, hjust=1), axis.title.x = element_blank(),
         legend.position = c(0.825, 0.85))
 
+graphics.off()
+windows(w=12,h=4,record=TRUE)
 print(p1)
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -103,47 +86,45 @@ print(p1)
 
 
 ## visualize kernal densities ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
-graphics.off()
-windows(w=8,h=5,record=TRUE)
-
 ## standardize sample size among the four sites 
-len.NF <- length(NF[,4])
-len.WE <- length(WE[,4])
-len.Day <- length(Day[,4])
-len.ED <- length(ED[,4])
+len.f <- function(x1, x2, x3, x4){
+l1 <- length(x1[,4])
+l2 <- length(x2[,4])
+l3 <- length(x3[,4])
+l4 <- length(x4[,4])
+sample.size <- min(l1, l2, l3, l4)
+out <- return(sample.size)
+}
 
-## find minimum sample size
-sampleSize <- min(len.NF, len.WE, len.Day, len.ED)
+## calculate mimimum sample size used to rarify data 
+sample.size <- len.f(NF, WE, Day, ED)
 
-## randomly sample from data.frames to ensure equal sample size
-NavFac <- as.data.frame(sample(NF[,2], sampleSize, replace = F))
-WestEnd <- as.data.frame(sample(WE[,2], sampleSize, replace = F))
-Daytona <- as.data.frame(sample(Day[,2], sampleSize, replace = F))
-EastDutch <- as.data.frame(sample(ED[,2], sampleSize, replace = F))
 
-## rename column 
-names(NavFac)[1]<-"DegC" 
-names(WestEnd)[1]<-"DegC"
-names(Daytona)[1]<-"DegC"
-names(EastDutch)[1]<-"DegC"
+## rarify data and return data data frame
+sample.f <- function(x, site){
+  out <- as.data.frame(sample(x[,3], sample.size, replace=F))
+  names(out)[1] <- "DegC"
+  out$site <- site
+  return(out)
+  }
 
-## create site column for plotting
-NavFac$site <- "NavFac"
-WestEnd$site <- "WestEnd"
-Daytona$site <- "Daytona"
-EastDutch$site <- "EastDutch"
+NavFac <- sample.f(NF, "NavFac")
+WestEnd <- sample.f(WE, "WestEnd")
+Daytona <- sample.f(Day, "Daytona")
+EastDutch <- sample.f(ED, "EastDutch")
 
-## 
 newDat <- rbind(NavFac, WestEnd, Daytona, EastDutch)
+
 
 ## overlapping kernal densities
 p3 <- ggplot(dat, aes(DegC, fill=Site)) +
-  geom_density(position="identity", color="black", alpha=0.3) +  my.theme +
-  scale_fill_manual(values=pal_sites) +
-  xlab("Temperature, degrees Celcius") +
-  guides(fill=guide_legend(order=1))
+  geom_density(position="identity", color="black", alpha=0.3) +  my.theme + cols + 
+  xlab("Temperature, degrees Celcius") + guides(fill=guide_legend(order=1))
+
+graphics.off()
+windows(w=8,h=5,record=TRUE)
 print(p3)
-## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## END kernal density visualization ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
@@ -156,6 +137,7 @@ WE_num <- WestEnd$DegC
 Day_num <- Daytona$DegC
 ED_num <- EastDutch$DegC
 
+
 ## perform KS tests 
 ks.test(NF_num, ED_num)
 ks.test(NF_num, WE_num)
@@ -163,163 +145,49 @@ ks.test(NF_num, Day_num)
 ks.test(WE_num, ED_num)
 ks.test(WE_num, Day_num)
 ks.test(Day_num, ED_num)
-
-
-## simulate minimally to get a sense of the behavior of D
-x <- rnorm(3000, mean = 0, sd = 2)
-y <- rnorm(3000, mean = 10, sd = 2)
-xy <- ks.test(x,y)
 ## END KS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
 
 
-## wavelet analysis ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## data frames for wavelet analysis
-NF_temp <- as.data.frame(NF$DegC)
-WE_temp <- as.data.frame(WE$DegC)
-ED_temp <- as.data.frame(ED$DegC)
-Day_temp <- as.data.frame(Day$DegC)
-
-
-## there are 9 NAs in East Dutch (sensor issues?) remove them for wavelet 
-ED_temp <- na.omit(ED_temp)
-
-
-## wavelet analysis 
-NF_wavelet = analyze.wavelet(NF_temp, loess.span = 0,
-                             dt = 1, dj = 1/20,
-                             lowerPeriod = 1,
-                             upperPeriod = 16000,
-                             make.pval = F, n.sim = 10)
-
-
-WE_wavelet = analyze.wavelet(WE_temp, loess.span = 0,
-                             dt = 1, dj = 1/20,
-                             lowerPeriod = 1,
-                             upperPeriod = 16000,
-                             make.pval = F, n.sim = 10)
-
-
-ED_wavelet = analyze.wavelet(ED_temp, loess.span = 0,
-                              dt = 1, dj = 1/20,
-                              lowerPeriod = 1,
-                              upperPeriod = 16000,
-                              make.pval = F, n.sim = 10)
-
-
-Day_wavelet = analyze.wavelet(Day_temp, loess.span = 0,
-                        dt = 1, dj = 1/20,
-                        lowerPeriod = 1,
-                        upperPeriod = 16000,
-                        make.pval = F, n.sim = 10)
-
-
-
-
-## visualize wavelet analysis 
-graphics.off()
-windows(w=12,h=8,record=TRUE)
-
-## unsure why par is not working here? 
-par(mfrow=c(2,2))
-
-
-NavFac <- wt.image(NF_wavelet, main = "NavFac", color.key = "quantile", n.levels = 250,
-         legend.params = list(lab = "wavelet power levels"))
-
-
-WestEnd <- wt.image(WE_wavelet, main = "WestEnd", color.key = "quantile", n.levels = 250, 
-                   legend.params = list(lab = "wavelet power levels"))
-
-
-EastDutch <- wt.image(ED_wavelet, main = "EastDutch", color.key = "quantile", n.levels = 250, 
-                    legend.params = list(lab = "wavelet power levels"))
-
-
-Daytona <- wt.image(Day_wavelet, main = "Daytona", color.key = "quantile", n.levels = 250, 
-                      legend.params = list(lab = "wavelet power levels"))
-
-
-dev.off()
-## END wavelet analysis ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-
-
-
-## auto-correlation and cross-correlation through time ~~~~~~~~~~~~~~~~~~~~~~~~~
-auto_cor <- acf(NF_temp, lag.max = 16000, 
-                main="auto-correlation within NavFac temp data", 
-                xlab="lag in units of 1 hr; purple line = 6 month lag, red line = 1 year lag",
-                ylab="auto-correlation")
-abline(v=8760, col="red")
-abline(v=4380, col="darkorchid")
-
-
-## cross-correlation through time between two time series 
-cross_cor <- ccf(NF_temp, ED_temp, type = "correlation", 
-                 lag.max = 16000,
-                 main="cross-correlation through time between NacFac and EastDutch temp data",
-                 xlab="lag in units of 1 hr; purple line = 6 month lag, red line = 1 year lag",
-                 ylab="cross-correlation")
-abline(v=8760, col="red")
-abline(v=4380, col="darkorchid")
-## END acf and ccf ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-
-
-
 ## inverse ecdf plots ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## calcuate empirical cumulative density function and extract and sort values
-NF_ecdf <- data.frame(x=unique(NF$DegC), 
-                      y=ecdf(NF$DegC)(unique(NF$DegC))*length(NF$DegC))
-WE_ecdf <- data.frame(x=unique(WE$DegC), 
-                      y=ecdf(WE$DegC)(unique(WE$DegC))*length(WE$DegC))
-ED_ecdf <- data.frame(x=unique(ED$DegC), 
-                      y=ecdf(ED$DegC)(unique(ED$DegC))*length(ED$DegC))
-Day_ecdf <- data.frame(x=unique(Day$DegC), 
-                       y=ecdf(Day$DegC)(unique(Day$DegC))*length(Day$DegC))
+## t1 = calculate empirical cumulative density function values
+## t2 = rescale extracted cdf values to 0-1 scale
+## t3 = take the inverse of a cdf, such that the p(x) > or = log wave event
+ecdf.f <- function(dat, site.name){
+  t1 <- data.frame(x=unique(dat$DegC), y=ecdf(dat$DegC)(unique(dat$DegC))*length(dat$DegC))
+  t2 <- scale(t1$y, center=min(t1$y), scale=diff(range(t1$y)))
+  t3 <- ((t2 - max(t2)) * (-1))
+  t4 <- cbind(t1, t2, t3)
+  names(t4)[1:4]<-c("x", "unscaled_y", "y", "inv_y")
+  t4$Site <- site.name 
+  out <- return(t4)
+}
 
 
-## rescale extracted cdf values to 0-1 scale
-NF_ecdf$y <- scale(NF_ecdf$y, center=min(NF_ecdf$y), scale=diff(range(NF_ecdf$y)))
-WE_ecdf$y <- scale(WE_ecdf$y, center=min(WE_ecdf$y), scale=diff(range(WE_ecdf$y)))
-ED_ecdf$y <- scale(ED_ecdf$y, center=min(ED_ecdf$y), scale=diff(range(ED_ecdf$y)))
-Day_ecdf$y <- scale(Day_ecdf$y, center=min(Day_ecdf$y), scale=diff(range(Day_ecdf$y)))
-
-
-## take the inverse of a cdf, such that the p(x) > or = log wave event
-NF_ecdf$inv_y <- ((NF_ecdf$y - max(NF_ecdf$y)) * (-1))
-WE_ecdf$inv_y <- ((WE_ecdf$y - max(WE_ecdf$y)) * (-1))
-ED_ecdf$inv_y <- ((ED_ecdf$y - max(ED_ecdf$y)) * (-1))
-Day_ecdf$inv_y <- ((Day_ecdf$y - max(Day_ecdf$y)) * (-1))
-
-
-## add site name to new data frames
-NF_ecdf$Site <- "NavFac"
-WE_ecdf$Site <- "WestEnd"
-ED_ecdf$Site <- "EastDutch"
-Day_ecdf$Site <- "Daytona"
+## perform calculations
+NF_ecdf <- ecdf.f(NF, "NavFac")
+WE_ecdf <- ecdf.f(WE, "WestEnd")
+Day_ecdf <- ecdf.f(Day, "Daytona")
+ED_ecdf <- ecdf.f(ED, "EastDutch")
 
 
 ## combine cfd data frames into single df & and reorder sites in order to plot properly 
 dat_ecdf <- rbind(NF_ecdf, WE_ecdf, ED_ecdf, Day_ecdf)
 dat_ecdf$Site <- factor(dat_ecdf$Site, levels=c("NavFac", "WestEnd", "Daytona", "EastDutch"))
-pal_sites <- c("#BE2625", "#E88600", "#608341", "#00536f") #BE2625 used for tint and shade creation
 
 
 ## plot all 
-p1 <- ggplot(dat_ecdf, aes(x, inv_y, color=Site)) + my.theme +
-  geom_line(lwd=1, alpha=.8) +
-  scale_color_manual(values=pal_sites) +
-  xlab("Temperature, degrees Celcius") + ylab("empirical probability") 
-  #ggtitle("probability of water temperature being equal to or warmer than the corresponding (x-axis) temp")
-
+p1 <- ggplot(dat_ecdf, aes(x, inv_y, color=Site)) + my.theme + cols +
+  geom_line(lwd=1, alpha=.8) + xlab("Temperature, degrees Celcius") + ylab("empirical probability") 
 print(p1)
 ## END inverse ecdf plots ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## END OF SCRIPT ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
 
+
+
+
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## END OF SCRIPT ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
