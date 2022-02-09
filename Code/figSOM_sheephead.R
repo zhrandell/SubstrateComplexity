@@ -1,6 +1,5 @@
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
-## Script to produce SOM sheephead figures ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
-## updated May 25th 2021; zhr ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+## Fig S6 from Substrate Complexity ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
 
@@ -10,13 +9,10 @@
 ## startup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 rm(list = ls())
 
-library(ggplot2)
-library(dplyr)
-library(vegan)
-library(MASS)
-library(fitdistrplus)
+#library(MASS)
+#library(fitdistrplus)
 library(gridExtra)
-library(RColorBrewer)
+#library(RColorBrewer)
 library(ggpubr)
 library(egg)
 library(gtable)
@@ -24,14 +20,13 @@ library(grid)
 library(magick)
 library(magrittr)
 library(here)
+library(dplyr)
+library(tidyverse)
 
-setwd("D:/OneDrive/Active_Projects/Substrate_Complexity/Data")
+setwd("D:/OneDrive/Active_Projects/SubstrateComplexity/Data")
 dat <- read.csv("CAsheephead.csv", header = TRUE)
 
-graphics.off()
-windows(h=10,w=6, record=TRUE)
-
-my.theme = theme(panel.grid.major = element_blank(), 
+my.theme <- theme(panel.grid.major = element_blank(), 
                  panel.grid.minor = element_blank(),
                  panel.background = element_blank(), 
                  axis.line = element_line(colour = "black"),
@@ -50,41 +45,54 @@ my.theme = theme(panel.grid.major = element_blank(),
 ## configure data for kernal densities and eCDF ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 dat$Site <- factor(dat$Station, 
                    levels=c("1","2","3","4","5","6"),
-                   labels=c("NavFac","West End Urchin","West End Kelp","West Dutch","East Dutch","Daytona"))
+                   labels=c("NavFac", "West End Urchin","West End Kelp",
+                            "West Dutch","East Dutch","Daytona"))
+
 
 ## once more to reorder the site labels (for plotting)
 dat$Site <- factor(dat$Site, levels=c("NavFac","West End Urchin","West End Kelp","Daytona","East Dutch","West Dutch"))
 
-dat <- filter(dat, Site %in% c("NavFac","West End Urchin","West End Kelp","West Dutch","East Dutch","Daytona"))
 
+## remove Sandy Cove obs
+dat <- filter(dat, Site %in% c("NavFac","West End Urchin","West End Kelp",
+                               "West Dutch","East Dutch","Daytona"))
+
+
+## log transformation
 dat$log <- log10(dat$SumAdultCount+1)
 
 
-NF <- filter(dat, Site %in% c("NavFac"))
-WEK <- filter(dat, Site %in% c("West End Kelp"))
-WEU <- filter(dat, Site %in% c("West End Urchin"))
-ED <- filter(dat, Site %in% c("East Dutch"))
-WD <- filter(dat, Site %in% c("West Dutch"))
-Day <- filter(dat, Site %in% c("Daytona"))
-## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## filter by site
+filter.site <- function(x){filter(dat, Site %in% c(x))}
+NF <- filter.site("NavFac")
+WEK <- filter.site("West End Kelp")
+WEU <- filter.site("West End Urchin")
+Day <- filter.site("Daytona")
+ED <- filter.site("East Dutch")
+WD <- filter.site("West Dutch")
+## END data configuration ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
 
 
 ## plot kernal densities ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-pal_All <- c("#ab2221", "#be5e00", "#7b6800", "#4d6934", "#3386a2", "#803280")
+## custom graphical params 
+fill.cols <- scale_fill_manual(values=c("#ab2221", "#be5e00", "#7b6800", "#4d6934", "#3386a2", "#803280"))
+cols <- scale_color_manual(values=c("#ab2221", "#be5e00", "#7b6800", "#4d6934", "#3386a2", "#803280"))
+x.scale <- scale_x_continuous(labels=c("0","3.16","10","31.6","100","316.2")) 
+no.legend.title <- theme(legend.title = element_blank())
 
+
+## create plot 
+p3 <- ggplot(dat, aes(log, fill=Site)) +
+  geom_density(position="identity", color="black", alpha=0.3) +  
+  my.theme + fill.cols + x.scale + no.legend.title + xlab("total sheephead per site (per 0.1 hectare)") 
+
+
+## visualize 
 graphics.off()
 windows(w=8,h=5,record=TRUE)
-
-p3 <- ggplot(dat, aes(log, fill=Site)) +
-  geom_density(position="identity", color="black", alpha=0.3) +  my.theme +
-  scale_fill_manual(values=pal_All) +
-  xlab("total sheephead per site (per 0.1 hectare)") +
-  guides(fill=guide_legend(order=1)) +
-  scale_x_continuous(labels=c("0","3.16","10","31.6","100","316.2")) +
-  theme(legend.title = element_blank())
 print(p3)
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -93,438 +101,222 @@ print(p3)
 
 
 ## eCDFs~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ~~~~~~~~~~~~~~~~~~~~~~~~~~
-## calcuate empirical cumulative density function and extract and sort values
-NF_ecdf <- data.frame(x=unique(NF$log), 
-                      y=ecdf(NF$log)(unique(NF$log))*length(NF$log))
-WEU_ecdf <- data.frame(x=unique(WEU$log), 
-                       y=ecdf(WEU$log)(unique(WEU$log))*length(WEU$log))
-WEK_ecdf <- data.frame(x=unique(WEK$log), 
-                       y=ecdf(WEK$log)(unique(WEK$log))*length(WEK$log))
-Day_ecdf <- data.frame(x=unique(Day$log), 
-                       y=ecdf(Day$log)(unique(Day$log))*length(Day$log))
-ED_ecdf <- data.frame(x=unique(ED$log), 
-                      y=ecdf(ED$log)(unique(ED$log))*length(ED$log))
-WD_ecdf <- data.frame(x=unique(WD$log), 
-                      y=ecdf(WD$log)(unique(WD$log))*length(WD$log))
+## calcuate empirical cumulative density function and extract/sort/process values 
+ecdf.f <- function(dat, site.name){
+  t1 <- data.frame(x=unique(dat$log), y=ecdf(dat$log)(unique(dat$log))*length(dat$log))
+  t2 <- scale(t1$y, center=min(t1$y), scale=diff(range(t1$y)))
+  t3 <- ((t2 - max(t2)) * (-1))
+  t4 <- cbind(t1, t2, t3)
+  names(t4)[1:4] <- c("x", "unscaled_y", "y", "inv_y")
+  t4$Site <- site.name
+  out <- return(t4)
+}
 
 
-## rescale extracted cdf values to 0-1 scale
-NF_ecdf$y <- scale(NF_ecdf$y, center=min(NF_ecdf$y), scale=diff(range(NF_ecdf$y)))
-WEU_ecdf$y <- scale(WEU_ecdf$y, center=min(WEU_ecdf$y), scale=diff(range(WEU_ecdf$y)))
-WEK_ecdf$y <- scale(WEK_ecdf$y, center=min(WEK_ecdf$y), scale=diff(range(WEK_ecdf$y)))
-Day_ecdf$y <- scale(Day_ecdf$y, center=min(Day_ecdf$y), scale=diff(range(Day_ecdf$y)))
-ED_ecdf$y <- scale(ED_ecdf$y, center=min(ED_ecdf$y), scale=diff(range(ED_ecdf$y)))
-WD_ecdf$y <- scale(WD_ecdf$y, center=min(WD_ecdf$y), scale=diff(range(WD_ecdf$y)))
-
-
-## take the inverse of a cdf, such that the p(x) > or = log wave event
-NF_ecdf$inv_y <- ((NF_ecdf$y - max(NF_ecdf$y)) * (-1))
-WEU_ecdf$inv_y <- ((WEU_ecdf$y - max(WEU_ecdf$y)) * (-1))
-WEK_ecdf$inv_y <- ((WEK_ecdf$y - max(WEK_ecdf$y)) * (-1))
-Day_ecdf$inv_y <- ((Day_ecdf$y - max(Day_ecdf$y)) * (-1))
-ED_ecdf$inv_y <- ((ED_ecdf$y - max(ED_ecdf$y)) * (-1))
-WD_ecdf$inv_y <- ((WD_ecdf$y - max(WD_ecdf$y)) * (-1))
-
-
-## add site name to new data frames
-NF_ecdf$Site <- "NavFac"
-WEU_ecdf$Site <- "West End Urchin"
-WEK_ecdf$Site <- "West End Kelp"
-Day_ecdf$Site <- "Daytona"
-ED_ecdf$Site <- "East Dutch"
-WD_ecdf$Site <- "West Dutch"
+## apply ecdf.f() function to data
+NF.e <- ecdf.f(NF, "NavFac")
+WEK.e <- ecdf.f(WEK, "West End Kelp")
+WEU.e <- ecdf.f(WEU, "West End Urchin")
+Day.e <- ecdf.f(Day, "Daytona")
+ED.e <- ecdf.f(ED, "East Dutch")
+WD.e <- ecdf.f(WD, "West Dutch")
 
 
 ## combine cfd data frames into single df & and reorder sites in order to plot properly 
-dat_ecdf <- rbind(NF_ecdf, WEU_ecdf, WEK_ecdf, Day_ecdf, ED_ecdf, WD_ecdf)
-dat_ecdf$Site <- factor(dat_ecdf$Site, levels=c("NavFac", "West End Urchin", "West End Kelp", 
-                                                "Daytona", "East Dutch", "West Dutch"))
+dat.e <- rbind(NF.e, WEK.e, WEU.e, Day.e, ED.e, WD.e)
+dat.e$Site <- factor(dat.e$Site, levels=c("NavFac","West End Kelp","West End Urchin",
+                                          "Daytona","East Dutch","West Dutch"))
 
 
-## plot all 
-p1 <- ggplot(dat_ecdf, aes(x, inv_y, color=Site)) + my.theme +
-  geom_line(lwd=1, alpha=.8) +
-  scale_color_manual(values=pal_All) +
-  xlab("total sheephead per site (per 0.1 hectare)") + ylab("inverse empirical CDF") +
-  scale_x_continuous(labels=c("0","3.16","10","31.6","100","316.2")) 
-
+## create plot and visualize
+p1 <- ggplot(dat.e, aes(x, inv_y, color=Site)) +  
+  geom_line(lwd=1, alpha=.8) + my.theme + cols + x.scale +
+  xlab("total sheephead per site (per 0.1 hectare)") + ylab("inverse empirical CDF") 
+  
 print(p1)
-## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## END eCDFs ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
 
 
 ## temporal dynamics figure to superimpose above Sheephead time series ~~~~~~~~~
-setwd("D:/OneDrive/Active_Projects/Substrate_Complexity/Data")
-dat1 <- read.csv("NMDS_coordinates.csv", header = TRUE)
-## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+setwd("D:/OneDrive/Active_Projects/SubstrateComplexity/Data")
+dat.ts <- read.csv("NMDS_coordinates.csv", header = TRUE)
 
 
-
-
-
-## configure data ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-dat1$SITE <- factor(dat1$SITE, levels=c("NavFac", "WestEnd Kelp", "WestEnd Urchin",  
-                                      "Daytona", "East Dutch", "West Dutch"), 
-                   labels=c("NavFac", "WestEnd Kelp", "WestEnd Urchin",  
-                            "Daytona", "East Dutch", "West Dutch"))
+## site as.factor and ordered as desired for plotting 
+dat.ts$SITE <- factor(dat.ts$SITE, levels=c("NavFac", "WestEnd Kelp", "WestEnd Urchin",
+                                            "Daytona", "East Dutch", "West Dutch"))
 
 
 ## subset by site
-NF1 <- filter(dat1, SITE %in% c("NavFac"))
-WEK1 <- filter(dat1, SITE %in% c("WestEnd Kelp"))
-Day1 <- filter(dat1, SITE %in% c("Daytona"))
-ED1 <- filter(dat1, SITE %in% c("East Dutch"))
-WEU1 <- filter(dat1, SITE %in% c("WestEnd Urchin"))
-WD1 <- filter(dat1, SITE %in% c("West Dutch"))
-## END data configuration ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+filter.site.2 <- function(x){filter(dat.ts, SITE %in% c(x))}
+NF.ts <- filter.site.2("NavFac")
+WEK.ts <- filter.site.2("WestEnd Kelp")
+WEU.ts <- filter.site.2("WestEnd Urchin")
+Day.ts <- filter.site.2("Daytona")
+ED.ts <- filter.site.2("East Dutch")
+WD.ts <- filter.site.2("West Dutch")
+## END data wrangling ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
 
 
-## Plotting configuration ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## custom color palattes 
-pal_NF <- c("#390b0b", "#721716", "#ab2221", "#cb5151", "#df9392") #BE2625 used for tint and shade creation
-pal_WEK <- c("#301800", "#773b00", "#be5e00", "#f0841a", "#f5ad66") #FF6600 used for tint and shade creation
-pal_WEU <- c("#141100", "#3d3400", "#7b6800", "#b99c00", "#e6d680") #CDAD00 used for tint and shade creation
-pal_Day <- c("#131a0d", "#304221", "#4d6934", "#708f54", "#a0b58d") #608341 used for tint and shade creation
-pal_ED <- c("#003446", "#00536f", "#3386a2", "#66a4b9", "#99c3d1") #00688B used for tint and shade creation
-pal_WD <- c("#2b112b", "#552255", "#803280", "#a560a5", "#c79cc7") #9932CD used for tint and shade creation
-pal_SC <- c("#062620", "#106050", "#1a997f", "#36c5a9", "#79d9c5")
+## Plotting configuration for NMDS Axis-1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## custom colors 
+NF.col <- scale_color_manual(values=c("#390b0b", "#721716", "#ab2221", "#cb5151", "#df9392")) 
+WEK.col <- scale_color_manual(values=c("#301800", "#773b00", "#be5e00", "#f0841a", "#f5ad66")) 
+WEU.col <- scale_color_manual(values=c("#141100", "#3d3400", "#7b6800", "#b99c00", "#e6d680")) 
+Day.col <- scale_color_manual(values=c("#131a0d", "#304221", "#4d6934", "#708f54", "#a0b58d")) 
+ED.col <- scale_color_manual(values=c("#003446", "#00536f", "#3386a2", "#66a4b9", "#99c3d1")) 
+WD.col <- scale_color_manual(values=c("#2b112b", "#552255", "#803280", "#a560a5", "#c79cc7")) 
 
 
-## custom annotations 
-algae <- grobTree(text_grob("Algae", x=1, y=-5, hjust=0, size = 16, color = "#308014", face = "bold"))
-mixed <- grobTree(text_grob("Mixed", x=0, y=-10, hjust=0, size = 16, color = "#FFA500", face = "bold"))
-barren <- grobTree(text_grob("Barren", x=1, y=-15, hjust=0, size = 15, color = "#660198", face = "bold"))
+## custom graphing commands
+background <- theme(panel.border = element_blank(), 
+                    panel.grid.major = element_blank(),
+                    panel.grid.minor = element_blank(),
+                    panel.background = element_rect(fill = "transparent", colour = NA),
+                    plot.background = element_rect(fill = "transparent", colour = NA), 
+                    legend.position = "none") 
+
+no.axes <- theme(axis.title.y = element_blank(),
+                 axis.title.x = element_blank(),
+                 axis.text.x = element_blank(),
+                 axis.text.y = element_blank(),
+                 axis.ticks.x = element_blank(),
+                 axis.ticks.y = element_blank()) 
+  
+x.lim <- xlim(2, 85)
+y.lim <- ylim(-1.32, 1.2)
 
 
-## sequence to plot along axis 2 
-yrz=seq(1981,2018)
-## END Plotting configuration ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## add annotation designating system state
+text.size <- 4.75
+hjust <- 0.2
+x1 <- 80
+y1 <- 0.7
+y2 <- -0.15
+y3 <- -1.0
+
+add.annotation <- function(label, y.state){
+  annotate("text", x=x1, y=y.state, label=label, size=text.size, hjust=hjust)
+  }
+
+barren <- add.annotation("Barren", y1)
+mixed <- add.annotation("Mixed", y2)
+algae <- add.annotation("Algae", y3)
+## END custom plotting params ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
 
 
 ## Create plots ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+plot.ts <- function(dat, cols){
+  ggplot(dat, aes(PERIOD, NMDS1, color=TRANSECT)) + 
+    cols + geom_path() + theme_bw() + background + x.lim + y.lim + no.axes +
+    barren + mixed + algae
+}
+
+
+## call function to create plots
+NF.p1 <- plot.ts(NF.ts, NF.col)
+WEK.p1 <- plot.ts(WEK.ts, WEK.col)
+WEU.p1 <- plot.ts(WEU.ts, WEU.col)
+Day.p1 <- plot.ts(Day.ts, Day.col)  
+ED.p1 <- plot.ts(ED.ts, ED.col)
+WD.p1 <- plot.ts(WD.ts, WD.col)
+
+
+## visualize 
 graphics.off()
 windows(h=4,w=10, record=TRUE)
-
-## Plot Navfac 
-p1 <- ggplot(NF1, aes(PERIOD,NMDS1,color=TRANSECT)) +
-  #geom_vline(xintercept=c(0.5,-.75),size=.1, color="gray50") +
-  scale_color_manual(values=pal_NF) +
-  #geom_point() +
-  geom_path() +
-  theme_bw() +
-  theme(panel.border = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_rect(fill = "transparent", colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA)) +  ylim(-1.25, 1.25) +
-  xlim(2,85) +
-  #ylab("NMDS Axis-1: System State") +
-  guides(color=FALSE) +
-  theme(axis.title.y = element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.ticks.y = element_blank()) +
-  annotate("text", x=80,y=.7,label="Barren",size=4.75, hjust=.2) +
-  annotate("text", x=80,y=-.15,label="Mixed",size=4.75, hjust=.2) +
-  annotate("text", x=80,y=-1,label="Algae",size=4.75, hjust=.2) 
-#annotate("text", x=0,y=72.5,label="NavFac",size=4.75,vjust=2.2,hjust=.5)
-print(p1)
-
-
-
-
-
-p2 <- ggplot(WEU1, aes(PERIOD,NMDS1,color=TRANSECT)) +
-  #geom_vline(xintercept=c(0.5,-.75),size=.1, color="gray50") +
-  scale_color_manual(values=pal_WEU) +
-  #geom_point() +
-  geom_path() +
-  theme_bw() +
-  theme(panel.border = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_rect(fill = "transparent", colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA)) +  ylim(-1.25, 1.25) +
-  ylab("NMDS Axis-1: System State") +
-  xlim(2,85) +
-  guides(color=FALSE) +
-  theme(axis.title.y = element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.ticks.y = element_blank()) +
-  annotate("text", x=80,y=.7,label="Barren",size=4.75, hjust=.2) +
-  annotate("text", x=80,y=-.15,label="Mixed",size=4.75, hjust=.2) +
-  annotate("text", x=80,y=-1,label="Algae",size=4.75, hjust=.2) 
-#annotate("text", x=0,y=72.5,label="NavFac",size=4.75,vjust=2.2,hjust=.5)
-print(p2)
-
-
-
-
-## Plot WestEnd Kelp 
-p3 <- ggplot(WEK1, aes(PERIOD,NMDS1,color=TRANSECT)) +
-  #geom_vline(xintercept=c(0.5,-.75),size=.1, color="gray50") +
-  scale_color_manual(values=pal_WEK) +
-  #geom_point() +
-  geom_path() +
-  theme_bw() +
-  theme(panel.border = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_rect(fill = "transparent", colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA)) +  ylim(-1.25, 1.25) +
-  ylab("NMDS Axis-1: System State") +
-  guides(color=FALSE) +
-  xlim(2,85) +
-  theme(axis.title.y = element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.ticks.y = element_blank()) +
-  annotate("text", x=80,y=.7,label="Barren",size=4.75, hjust=.2) +
-  annotate("text", x=80,y=-.15,label="Mixed",size=4.75, hjust=.2) +
-  annotate("text", x=80,y=-1,label="Algae",size=4.75, hjust=.2) 
-#annotate("text", x=0,y=72.5,label="NavFac",size=4.75,vjust=2.2,hjust=.5)
-print(p3)
-
-
-
-
-p4 <- ggplot(Day1, aes(PERIOD,NMDS1,color=TRANSECT)) +
-  #geom_vline(xintercept=c(0.5,-.75),size=.1, color="gray50") +
-  scale_color_manual(values=pal_Day) +
-  #geom_point() +
-  geom_path() +
-  theme_bw() +
-  theme(panel.border = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_rect(fill = "transparent", colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA)) +  ylim(-1.25, 1.25) +
-  xlim(2,85) +
-  ylab("NMDS Axis-1: System State") +
-  guides(color=FALSE) +
-  theme(axis.title.y = element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.ticks.y = element_blank()) +
-  annotate("text", x=80,y=.7,label="Barren",size=4.75, hjust=.2) +
-  annotate("text", x=80,y=-.15,label="Mixed",size=4.75, hjust=.2) +
-  annotate("text", x=80,y=-1,label="Algae",size=4.75, hjust=.2) 
-#annotate("text", x=0,y=72.5,label="NavFac",size=4.75,vjust=2.2,hjust=.5)
-print(p4)
-
-
-
-
-
-p5 <- ggplot(ED1, aes(PERIOD,NMDS1,color=TRANSECT)) +
-  #geom_vline(xintercept=c(0.5,-.75),size=.1, color="gray50") +
-  scale_color_manual(values=pal_ED) +
-  #geom_point() +
-  geom_path() +
-  theme_bw() +
-  theme(panel.border = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_rect(fill = "transparent", colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA)) +
-  ylim(-1.25, 1.25) +
-  xlim(2,85) +
-  ylab("NMDS Axis-1: System State") +
-  guides(color=FALSE) +
-  theme(axis.title.y = element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.ticks.y = element_blank()) +
-  annotate("text", x=80,y=.7,label="Barren",size=4.75, hjust=.2) +
-  annotate("text", x=80,y=-.15,label="Mixed",size=4.75, hjust=.2) +
-  annotate("text", x=80,y=-1,label="Algae",size=4.75, hjust=.2) 
-#annotate("text", x=0,y=72.5,label="NavFac",size=4.75,vjust=2.2,hjust=.5)
-print(p5)
-
-
-
-
-p6 <- ggplot(WD1, aes(PERIOD,NMDS1,color=TRANSECT)) +
-  #geom_vline(xintercept=c(0.5,-.75),size=.1, color="gray50") +
-  scale_color_manual(values=pal_WD) +
-  #geom_point() +
-  geom_path() +
-  theme_bw() +
-  theme(panel.border = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_rect(fill = "transparent", colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA)) +  ylim(-1.25, 1.25) +
-  ylab("NMDS Axis-1: System State") +
-  xlim(2,85) +
-  guides(color=FALSE) +
-  theme(axis.title.y = element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.ticks.y = element_blank()) +
-  annotate("text", x=80,y=.7,label="Barren",size=4.75, hjust=.2) +
-  annotate("text", x=80,y=-.15,label="Mixed",size=4.75, hjust=.2) +
-  annotate("text", x=80,y=-1,label="Algae",size=4.75, hjust=.2) 
-#annotate("text", x=0,y=72.5,label="NavFac",size=4.75,vjust=2.2,hjust=.5)
-print(p6)
-## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+print(NF.p1)
+## END NMDS Axis-1 creation ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
 
 
 ## CA sheephead time series ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-setwd("D:/OneDrive/Active_Projects/Substrate_Complexity/Data")
-dat2 <- read.csv("CAsheephead.csv", header = TRUE)
+setwd("D:/OneDrive/Active_Projects/SubstrateComplexity/Data")
+dat.sh <- read.csv("CAsheephead.csv", header = TRUE)
+
+
+## as.factor 
+dat.sh$Site <- factor(dat.sh$Station, 
+                    levels=c("1","2","3","4","5","6"),
+                    labels=c("NavFac","West End Urchin","West End Kelp","West Dutch","East Dutch","Daytona"))
+
+
+## re-order for plotting 
+dat.sh <- filter(dat.sh, Site %in% c("NavFac","West End Urchin","West End Kelp","West Dutch","East Dutch","Daytona"))
+
+
+## log transform 
+dat.sh$log <- log10(dat.sh$SumAdultCount+1)
+
+
+
+filter.site.3 <- function(x){filter(dat.sh, Site %in% c(x))}
+NF.sh <- filter.site.3("NavFac")
+WEK.sh <- filter.site.3("West End Kelp")
+WEU.sh <- filter.site.3("West End Urchin")
+Day.sh <- filter.site.3("Daytona")
+ED.sh <- filter.site.3("East Dutch")
+WD.sh <- filter.site.3("West Dutch")
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
 
 
-## configure data ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-dat2$log <- log10(dat2$SumAdultCount+1)
-
-dat2$Site <- factor(dat2$Station, 
-                   levels=c("1","2","3","4","5","6"),
-                   labels=c("NavFac","West End Urchin","West End Kelp","West Dutch","East Dutch","Daytona"))
-
-dat2 <- filter(dat2, Site %in% c("NavFac","West End Urchin","West End Kelp","West Dutch","East Dutch","Daytona"))
+## plot sheephead time series ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+scale.x <- scale_x_continuous(limits=c(3, 85))
+scale.y <- scale_y_continuous(limits=c(0, 3))
 
 
-NF2 <- filter(dat2, Site %in% c("NavFac"))
-WEK2 <- filter(dat2, Site %in% c("West End Kelp"))
-WEU2 <- filter(dat2, Site %in% c("West End Urchin"))
-ED2 <- filter(dat2, Site %in% c("East Dutch"))
-WD2 <- filter(dat2, Site %in% c("West Dutch"))
-Day2 <- filter(dat2, Site %in% c("Daytona"))
-## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+plot.sheephead <- function(dat, site.name){
+  ggplot(dat, aes(x=Period, y=log)) + geom_line(lwd=1) + labs(title=site.name) + 
+    scale.y + scale.x + no.axes + my.theme 
+}
+
+NF.p2 <- plot.sheephead(NF.sh, "NavFac") + theme(plot.margin = unit(c(.1,.1,.1,4.5), "lines"))
+WEK.p2 <- plot.sheephead(WEK.sh, "West End Kelp")
+WEU.p2 <- plot.sheephead(WEU.sh, "West End Urchin")
+Day.p2 <- plot.sheephead(Day.sh, "Daytona") + theme(plot.margin = unit(c(.1,.1,.1,4.5), "lines")) 
+ED.p2 <- plot.sheephead(ED.sh, "East Dutch") + theme(plot.margin = unit(c(.1,.1,2.5,.1), "lines"))
+WD.p2 <- plot.sheephead(WD.sh, "West Dutch") + theme(plot.margin = unit(c(.1,.1,2.5,.1), "lines"))
 
 
+## combine state dynamics along Axis-1 with sheephead time series
+combine.plot <- function(f1, f2){
+  f1 + annotation_custom(ggplotGrob(f2), xmin=-2, xmax=90, ymin=1.8, ymax=3.5)
+}
 
 
-## plot ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-graphics.off()
-windows(h=6,w=10, record = T)
+NF.p3 <- combine.plot(NF.p2, NF.p1)
+WEK.p3 <- combine.plot(WEK.p2, WEK.p1)
+WEU.p3 <- combine.plot(WEU.p2, WEU.p1)
+Day.p3 <- combine.plot(Day.p2, Day.p1)
+ED.p3 <- combine.plot(ED.p2, ED.p1)
+WD.p3 <- combine.plot(WD.p2, WD.p1)
 
-splots.theme <- theme(axis.title.x = element_blank(),
-                      axis.text.x = element_blank(),
-                      axis.ticks.x = element_blank(),
-                      axis.title.y = element_blank(),
-                      axis.text.y = element_blank(),
-                      axis.ticks.y = element_blank()) 
-  
-
-## individual sites: CA sheephead abundance (natural = SumAdultCount or log scale)
-s1 <- ggplot(NF2, aes(x = Period, y = log)) + geom_line(lwd=1) +
-  labs(title = "NavFac") +  scale_y_continuous(limits = c(0, 3)) + 
-  my.theme + splots.theme + theme(plot.margin = unit(c(.1,.1,.1,4.5), "lines")) +  
-  scale_x_continuous(limits=c(3,85)) 
-print(s1)  
+print(NF.p3)
 
 
-s2 <- ggplot(WEU2, aes(x = Period, y = log)) + geom_line(lwd=1) +
-  labs(title = "West End Urchin") +   scale_y_continuous(limits = c(0, 3)) + 
-  my.theme + splots.theme + scale_x_continuous(limits=c(3,85)) 
-print(s2)
-
-
-s3 <- ggplot(WEK2, aes(x = Period, y = log)) + geom_line(lwd=1) +
-  labs(title = "West End Kelp") +   scale_y_continuous(limits = c(0, 3)) + 
-  my.theme + splots.theme + scale_x_continuous(limits=c(3,85)) 
-print(s3)
-
-
-s4 <- ggplot(Day2, aes(x = Period, y = log)) + geom_line(lwd=1) +
-  labs(title = "Daytona") + scale_y_continuous(limits = c(0, 3)) + 
-  my.theme + splots.theme + theme(plot.margin = unit(c(.1,.1,.1,4.5), "lines")) +  
-  scale_x_continuous(limits=c(3,85)) 
-print(s4)
-
-
-s5 <- ggplot(ED2, aes(x = Period, y = log)) + geom_line(lwd=1) +
-  labs(title = "East Dutch") + scale_y_continuous(limits = c(0, 3)) + 
-  my.theme + splots.theme + theme(plot.margin = unit(c(.1,.1,2.5,.1), "lines")) +  
-  scale_x_continuous(limits=c(3,85)) 
-print(s5)
-
-
-s6 <- ggplot(WD2, aes(x = Period, y = log)) + geom_line(lwd=1) +
-  labs(title = "West Dutch") + scale_y_continuous(limits = c(0, 3)) + 
-  my.theme + splots.theme +  theme(plot.margin = unit(c(.1,.1,2.5,.1), "lines")) +  
-  scale_x_continuous(limits=c(3,85)) 
-print(s6)
-## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-
-
-
-## combine time series with temporal dynamics ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-C1 <- s1 + annotation_custom(ggplotGrob(p1), xmin= -2, xmax=90, ymin= 1.8, ymax= 3.5)
-print(C1)
-
-C2 <- s2 + annotation_custom(ggplotGrob(p2), xmin= -2, xmax=90, ymin= 1.8, ymax= 3.5)
-print(C2)
-
-C3 <- s3 + annotation_custom(ggplotGrob(p3), xmin= -2, xmax=90, ymin= 1.8, ymax= 3.5)
-print(C3)
-
-C4 <- s4 + annotation_custom(ggplotGrob(p4), xmin= -2, xmax=90, ymin= 1.8, ymax= 3.5)
-print(C4)
-
-C5 <- s5 + annotation_custom(ggplotGrob(p5), xmin= -2, xmax=90, ymin= 1.8, ymax= 3.5)
-print(C5)
-
-C6 <- s6 + annotation_custom(ggplotGrob(p6), xmin= -2, xmax=90, ymin= 1.8, ymax= 3.5)
-print(C6)
-## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-
-
-
-## aggregate all plots ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 windows(h=6,w=16, record=TRUE)
-
-
-p10 <- egg::ggarrange(tag_facet(C1 + facet_wrap(~"Period"), tag_pool="a"),
-                 tag_facet(C2 + facet_wrap(~"Period"), tag_pool="b"),
-                 tag_facet(C3 + facet_wrap(~"Period"), tag_pool="c"),
-                 tag_facet(C4 + facet_wrap(~"Period"), tag_pool="d"),
-                 tag_facet(C5 + facet_wrap(~"Period"), tag_pool="e"),
-                 tag_facet(C6 + facet_wrap(~"Period"), tag_pool="f"),
-                 nrow=2, ncol=3)
-
-print(p10)
-## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+figS7 <- ggarrange(NF.p3, WEK.p3, WEU.p3, Day.p3, ED.p3, WD.p3, nrow=2)
+## END plot creation ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
 
 
-## custom axes -- started here and finished in adobe PDF ~~~~~~~~~~~~~~~~~~~~~~~
+## custom axis creation . . . start here and finish in adobe ~~~~~~~~~~~~~~~~~~~
 seq <- seq(1980, 2020, by = 4)
 
 lab<-grid.xaxis(at=c(seq), 
@@ -532,10 +324,10 @@ lab<-grid.xaxis(at=c(seq),
                            viewport(y=1, xscale = c(1980,2018), just="left")))
 
 lab2<-grid.yaxis(at=c(1,2,3,4), 
-                vp=vpStack(viewport(width=unit(1,"lines")),
-                           viewport(x=1, yscale = c(0,4), just="left")))
+                 vp=vpStack(viewport(width=unit(1,"lines")),
+                            viewport(x=1, yscale = c(0,4), just="left")))
 
-print(p10)
+print(figS7)
 
 vp1 <- viewport(x = 0.065, y = 0.08, width = .9, height = .575, just="center")
 vp2 <- viewport(x = .0475, y = 0.23, width = 1, height = .46, just="center")
@@ -544,9 +336,17 @@ pushViewport(vp1)
 grid.draw(lab)
 ## save pdf and copy xaxis over to center and right column 
 
-print(p10)
+print(figS7)
 name<-grid.text(label="total CA sheephead per 0.1 hectare", x=.01,y=.5,rot=90)
+pushViewport(vp1)
 pushViewport(vp2)
 grid.draw(lab2)
-## save pdf and copy yaxis to upper row
+## save pdf and copy yaxis to upper row ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
+
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## END script ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
