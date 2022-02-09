@@ -85,7 +85,7 @@ yMin <- -1.1
 yMax <- 1.4
 
 ptType = 20 
-alph = 0.85
+alph = 1
 str = 0
 
 hjust <- 0
@@ -114,7 +114,7 @@ windows(h=6,w=6, record=TRUE)
 
 
 p1 <- ggplot(dat, aes(x = NMDS1, y = NMDS2)) +
-  geom_point(pch = ptType, alpha = alph, stroke = str, aes(color=SITE, size=MacPyr)) + coord_fixed() + 
+  geom_point(pch = ptType, stroke = str, aes(color=SITE, size=MacPyr)) + coord_fixed() + 
   ptSize + myCols + theme_bw() + myTheme + xlim(xMin, xMax) + ylim(yMin, yMax) + ylab("NMDS Axis-2") +
   guides(color = FALSE, size = guide_legend("Giant Kelp", order = 1, fill="black")) + legendTheme + 
   theme(axis.title.x = element_blank(), axis.title.y = element_text(size=14), 
@@ -164,7 +164,7 @@ print(fig1a)
 
 ## Second pane with herbivores ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 p4 <- ggplot(dat, aes(x = NMDS1, y = NMDS2)) +
-  geom_point(pch = ptType, alpha = alph, stroke = str, aes(color=SITE, size=StrPur)) + 
+  geom_point(pch = ptType, stroke = str, aes(color=SITE, size=StrPur)) + 
   coord_fixed() + theme_bw() + ptSize + myCols + myTheme + xlim(xMin, xMax) + ylim(yMin, yMax) +
   guides(color = FALSE, size = guide_legend("Purple Urchin", order = 1, fill="black")) + 
   legendTheme + bottom + theme(plot.margin = margin(r=.1, l=.1, b=2, t=20, unit = "pt")) +
@@ -174,7 +174,7 @@ p4 <- ggplot(dat, aes(x = NMDS1, y = NMDS2)) +
 
 ## extract legend from p5 and add to p4
 p5 <- ggplot(dat, aes(x = NMDS1, y = NMDS2)) + myCols + 
-  geom_point(pch = ptType, alpha = alph, aes(color=SITE, size=mean_rug)) +  
+  geom_point(pch = ptType, aes(color=SITE, size=mean_rug)) +  
   guides(color = guide_legend(override.aes = list(size=5), nrow=1), size = FALSE) + 
   theme(legend.text=element_text(size=14), legend.key=element_rect(fill = FALSE, color=FALSE), 
         legend.background=element_rect(fill=FALSE, color=FALSE), legend.title=element_blank(), 
@@ -216,7 +216,7 @@ print(fig1b)
 
 ## pane 3 -- sea star ordination w/ pt size as rugosity ~~~~~~~~~~~~~~~~~~~~~~~~
 p6 <- ggplot(dat, aes(x = NMDS1, y = NMDS2)) +
-  geom_point(pch = 20, alpha = 0.85, stroke = 0.0, aes(color=SITE, size=rugosity)) + 
+  geom_point(pch = 20, stroke = 0.0, aes(color=SITE, size=rugosity)) + 
   coord_fixed() + scale_size_continuous(range = c(sizeMin, 4.5), breaks = c(1.01, 1.3, 1.6, 1.9, 2.2)) + 
   myCols +  theme_bw() + myTheme + bottom + xlim(xMin, xMax) + ylim(yMin, yMax) +
   guides(color = FALSE, size = guide_legend("Rugosity", order = 1, fill="black")) + legendTheme + 
