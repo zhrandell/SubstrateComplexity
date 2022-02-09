@@ -79,6 +79,13 @@ Day.cols <- scale_color_manual(values=c("#131a0d", "#304221", "#4d6934", "#708f5
 ED.cols <- scale_color_manual(values=c("#003446", "#00536f", "#3386a2", "#66a4b9", "#99c3d1"))
 WD.cols <- scale_color_manual(values=c("#2b112b", "#552255", "#803280", "#a560a5", "#c79cc7"))
 
+NF.list <- list("#390b0b", "#721716", "#ab2221", "#cb5151", "#df9392")
+WEK.list <- list("#301800", "#773b00", "#be5e00", "#f0841a", "#f5ad66")
+WEU.list <- list("#141100", "#3d3400", "#7b6800", "#b99c00", "#e6d680")
+Day.list <- list("#131a0d", "#304221", "#4d6934", "#708f54", "#a0b58d")
+ED.list <- list("#003446", "#00536f", "#3386a2", "#66a4b9", "#99c3d1")
+WD.list <- list("#2b112b", "#552255", "#803280", "#a560a5", "#c79cc7")
+
 ## custom annotations 
 NF.grob <- grobTree(text_grob("39R", x=.85, y=.95, hjust=0, size = 15, color = "black"))
 WEU.grob <- grobTree(text_grob("32R", x=.85, y=.95, hjust=0, size = 15, color = "black"))
@@ -109,14 +116,12 @@ margins <- theme(plot.margin = margin(r=.1, l=.1, b=.1, t=.1, unit = "pt"))
 
 ## background (bg) pts 
 bg.pt.type <- 20
-bg.pt.alpha <- 0.05
-bg.pt.fill <- "gray"
-bg.pt.col <- "black"
+bg.pt.fill <- "#EDEDED"
+bg.pt.col <- "#EDEDED"
 bg.pt.size <- 0.25
 
 ## primary pts and line 
 pt.type <- 20
-pt.alpha <- 0.90
 pt.size <- 0.25
 path.size <- 0.20
 
@@ -140,6 +145,16 @@ WEU_tr.lab <- pane.lab.R2("I")
 Day_tr.lab <- pane.lab.R2("J")
 ED_tr.lab <- pane.lab.R2("K")
 WD_tr.lab <- pane.lab.R2("L")
+
+
+## custom color call for row 2
+add.col <- function(list){scale_color_manual(values=list)}
+NF.c <- add.col(NF.list[[4]])
+WEK.c <- add.col(WEK.list[[4]])
+WEU.c <- add.col(WEU.list[[3]])
+Day.c <- add.col(Day.list[[3]])
+ED.c <- add.col(ED.list[[4]])
+WD.c <- add.col(WD.list[[1]])
 ## END custom params for Fig2 row 2, transect tracks ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -148,46 +163,47 @@ WD_tr.lab <- pane.lab.R2("L")
 
 ## Plot Transect Tracks row 2 of figure 2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 NF_tr <- ggplot(ab_NF, aes(x = NMDS1, y = NMDS2)) +
-  geom_point(color=bg.pt.col, pch = bg.pt.type, alpha = bg.pt.alpha, fill=bg.pt.fill, size=bg.pt.size) +
-  geom_point(data = NF_39R, pch = pt.type, alpha = pt.alpha, aes(color=TRANSECT), size = pt.size) + 
+  #geom_point(color=bg.pt.col, pch = bg.pt.type, fill=bg.pt.fill, size=bg.pt.size) +
+  geom_point(data = NF_39R, pch = pt.type, aes(color=TRANSECT), size = pt.size) + 
   geom_path(data = NF_39R, aes(x=NMDS1, y=NMDS2), size = path.size) +
-  NF.cols + coord_fixed() + theme_bw() + bg.theme + x.axis + y.axis + margins + my.theme + y.title + no.x.title + 
+  NF.c + coord_fixed() + theme_bw() + bg.theme + x.axis + y.axis + margins + my.theme + y.title + no.x.title + 
   ylab("NMDS Axis-2") + annotation_custom(NF.grob) + NF_tr.lab
 
+
 WEU_tr <- ggplot(ab_WEU, aes(x = NMDS1, y = NMDS2)) +
-  geom_point(color=bg.pt.col, pch = bg.pt.type, alpha = bg.pt.alpha, fill=bg.pt.fill, size=bg.pt.size) +
-  geom_point(data = WEU_32R, pch = pt.type, alpha = pt.alpha, aes(color=TRANSECT), size = pt.size) + 
+  #geom_point(color=bg.pt.col, pch = bg.pt.type, fill=bg.pt.fill, size=bg.pt.size) +
+  geom_point(data = WEU_32R, pch = pt.type, aes(color=TRANSECT), size = pt.size) + 
   geom_path(data = WEU_32R, aes(x=NMDS1, y=NMDS2), size = path.size) +
   scale_x_continuous(limits = c(-1.5, 1.2), position = "top") +
-  WEU.cols + coord_fixed() + theme_bw() + bg.theme + y.axis + margins + my.theme + no.y.title + x.title +  
+  WEU.c + coord_fixed() + theme_bw() + bg.theme + y.axis + margins + my.theme + no.y.title + x.title +  
   xlab("System State") + annotation_custom(WEU.grob) + WEU_tr.lab
 
 WEK_tr <- ggplot(ab_WEK, aes(x = NMDS1, y = NMDS2)) +
-  geom_point(color=bg.pt.col, pch = bg.pt.type, alpha = bg.pt.alpha, fill=bg.pt.fill, size=bg.pt.size) +
-  geom_point(data = WEK_39R, pch = pt.type, alpha = pt.alpha, aes(color=TRANSECT), size = pt.size) + 
+  #geom_point(color=bg.pt.col, pch = bg.pt.type, fill=bg.pt.fill, size=bg.pt.size) +
+  geom_point(data = WEK_39R, pch = pt.type, aes(color=TRANSECT), size = pt.size) + 
   geom_path(data = WEK_39R, aes(x=NMDS1, y=NMDS2), size = path.size) +
-  WEK.cols + coord_fixed() + theme_bw() + bg.theme + x.axis + y.axis + margins + my.theme + no.y.title + x.title + 
+  WEK.c + coord_fixed() + theme_bw() + bg.theme + x.axis + y.axis + margins + my.theme + no.y.title + x.title + 
   xlab("NMDS Axis-1") + annotation_custom(WEK.grob) + WEK_tr.lab
 
 Day_tr <- ggplot(ab_Day, aes(x = NMDS1, y = NMDS2)) +
-  geom_point(color=bg.pt.col, pch = bg.pt.type, alpha = bg.pt.alpha, fill=bg.pt.fill, size=bg.pt.size) +
-  geom_point(data = Day_22R, pch = pt.type, alpha = pt.alpha, aes(color=TRANSECT), size = pt.size) + 
+  #geom_point(color=bg.pt.col, pch = bg.pt.type, fill=bg.pt.fill, size=bg.pt.size) +
+  geom_point(data = Day_22R, pch = pt.type, aes(color=TRANSECT), size = pt.size) + 
   geom_path(data = Day_22R, aes(x=NMDS1, y=NMDS2), size = path.size) +
-  Day.cols + coord_fixed() + theme_bw() + bg.theme + x.axis + y.axis + margins + my.theme + no.titles + 
+  Day.c + coord_fixed() + theme_bw() + bg.theme + x.axis + y.axis + margins + my.theme + no.titles + 
   annotation_custom(Day.grob) + Day_tr.lab
 
 ED_tr <- ggplot(ab_ED, aes(x = NMDS1, y = NMDS2)) +
-  geom_point(color=bg.pt.col, pch = bg.pt.type, alpha = bg.pt.alpha, fill=bg.pt.fill, size=bg.pt.size) +
-  geom_point(data = ED_22R, pch = pt.type, alpha = pt.alpha, aes(color=TRANSECT), size = pt.size) + 
+  #geom_point(color=bg.pt.col, pch = bg.pt.type, fill=bg.pt.fill, size=bg.pt.size) +
+  geom_point(data = ED_22R, pch = pt.type, aes(color=TRANSECT), size = pt.size) + 
   geom_path(data = ED_22R, aes(x=NMDS1, y=NMDS2), size = path.size) +
-  ED.cols + coord_fixed() + theme_bw() + bg.theme + x.axis + y.axis + margins + my.theme + no.titles + 
+  ED.c + coord_fixed() + theme_bw() + bg.theme + x.axis + y.axis + margins + my.theme + no.titles + 
   annotation_custom(ED.grob) + ED_tr.lab
 
 WD_tr <- ggplot(ab_WD, aes(x = NMDS1, y = NMDS2)) +
-  geom_point(color=bg.pt.col, pch = bg.pt.type, alpha = bg.pt.alpha, fill=bg.pt.fill, size=bg.pt.size) +
-  geom_point(data = WD_45L, pch = pt.type, alpha = pt.alpha, aes(color=TRANSECT), size = pt.size) + 
+  #geom_point(color=bg.pt.col, pch = bg.pt.type, fill=bg.pt.fill, size=bg.pt.size) +
+  geom_point(data = WD_45L, pch = pt.type, aes(color=TRANSECT), size = pt.size) + 
   geom_path(data = WD_45L, aes(x=NMDS1, y=NMDS2), size = path.size) +
-  WD.cols + coord_fixed() + theme_bw() + bg.theme + x.axis + y.axis + margins + my.theme + no.titles + 
+  WD.c + coord_fixed() + theme_bw() + bg.theme + x.axis + y.axis + margins + my.theme + no.titles + 
   annotation_custom(WD.grob) + WD_tr.lab
 ## END transect track plots ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
