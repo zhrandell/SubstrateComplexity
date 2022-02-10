@@ -35,10 +35,8 @@ library("rlist")
 library("reshape")
 library("egg")
 
-setwd("D:/OneDrive/Active_Projects/Substrate_Complexity/Data/Chlorophyll")
+setwd("D:/OneDrive/Active_Projects/SubstrateComplexity/Data/Chlorophyll")
 
-#save.image(file='MODIS_Terra_7685files.RData')
-#quit(save='no')
 
 ## load previous spatial analysis 
 #load('MODIS_Aqua_1626files.RData')
@@ -64,11 +62,8 @@ windows(h=5,w=8, record=TRUE)
 
 
 
-#####  
 
-## FIXED DEFINITIONS AND OBJECTS USED FOR ALL FILES ~~~~~~~~~~~~~~~~~~~~~~~~
-
-## CROP DATA AND CREATE BUFFER PART 1~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## crop data and create buffer part 1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## Select one -- 1: broader Channel Island, 2: SNI medium view, 3: SNI zoomed in ht
 #box1 <- as(extent(-121.0, -118.0, 32.4, 35.0), 'SpatialPolygons')
 box2 <- as(extent(-119.8, -119.2, 33.05, 33.45), 'SpatialPolygons')
@@ -79,18 +74,9 @@ coastlines <- readOGR("ne-coastlines-10m/ne_10m_coastline.shp")
 ## crop coastlines to create buffer
 SNI <- crop(coastlines, box2)
 
-## 1 degree latitude --> km  
-#km <- 1 / 110.574
-
-## create buffer areas of regions around SNI ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#buffer <- raster::buffer(SNI, width=3*km)
-
-## use raster::erase to only retain outside of island
-#SNI_sf <- st_as_sf(SNI)
-#SNI_poly <- st_polygonize(SNI_sf)
-#SNI_spatialpoly <- as(SNI_poly, "Spatial") 
-#buff <- raster::erase(buffer, SNI_spatialpoly)
-#plot(buff, col="cyan")
+natural_res <- c(2.84775, 2.12091)
+res <- 120
+new_res <- natural_res / res
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -138,73 +124,12 @@ points(pts, pch=21, col="black", bg="red", cex=1)
 
 
 
-
-## CREATE LINES TO DELINIATE REGIONS WITHIN BUFFER ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## coordinates manually determined 
-#l1 <-  rbind(c(-119.312897, 33.18), c(-119.695722, 33.32))
-#l2 <- rbind(c(-119.441736, 33.38125), c(-119.570142, 33.125417))
-
-## coordinates --> Formal class Line object 
-#S1 <- Line(l1)
-#S2 <- Line(l2)
-#S3 <- Lines(list(S1, S2), ID="a")
-
-## Formal class Line --> SpatialLines 
-#quadLines <- SpatialLines(list(S3))
-
-## remove coordinate system from buffer layer to facilitate next steps
-#crs(buff) <- NA
-#crs(quadLines) <- NA
-
-## intersect buffer with quadLines, buffer the intersection, and split the regions
-#intersect1 <- gIntersection(buff, quadLines)
-#intersect2 <- gBuffer(intersect1, width=0.0001) 
-#regions <- gDifference(buff, intersect2)
-
-## extract the four new regions 
-#sw <- SpatialPolygons(list(Polygons(list(regions@polygons[[1]]@Polygons[[1]]), "1")))
-#nw <- SpatialPolygons(list(Polygons(list(regions@polygons[[1]]@Polygons[[2]]), "2")))
-#ne <- SpatialPolygons(list(Polygons(list(regions@polygons[[1]]@Polygons[[3]]), "3")))
-#se <- SpatialPolygons(list(Polygons(list(regions@polygons[[1]]@Polygons[[4]]), "4")))
-
-## plot and check
-#plot(buff)
-#plot(sw, add=T, col="#B2222250")
-#plot(nw, add=T, col="#476A3450")
-#plot(ne, add=T, col="#FF610350") 
-#plot(se, add=T, col="#00808050")
-#lines(quadLines)
-## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-
-
-
-## FINAL DEFINITIONS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## set implicit crs for Chlor raster layer
-#MODIS_crs <- "+proj=longlat +datum=WGS84 +no_defs" 
-
-## create RasterLayer out of lat / long coordinates 
-natural_res <- c(2.84775, 2.12091)
-
-## scale the natural resolution by res
-res <- 120
-new_res <- natural_res / res
-## END UNIVERSAL OBJECTS AND DEFINITIONS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#####
-
-
-
-
-
-
 ## Loop through all NETcdf files ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 ## create file list
-datasets <- list.files('D:/OneDrive/Active_Projects/Substrate_Complexity/Data/Chlorophyll/MODIS_Terra/files', 
-                       pattern="*.nc", full.names=TRUE, include.dirs=FALSE)
-## an alternative
-#filelist <- paste("automate/", dir("automate"), sep="")
+datasets <- list.files('D:/OneDrive/Active_Projects/SubstrateComplexity/Data/Chlorophyll/MODIS_Terra/files', 
+                       pattern="*.nc", 
+                       full.names=TRUE, 
+                       include.dirs=FALSE)
 
 
 ## set up empty numeric vectors to hold Chlorophyll data 
@@ -217,7 +142,7 @@ day <- numeric()
 ## number of NETcdf files to loop through
 len <- length(datasets)
 
-## for loop 
+## loop through all NETcdf files 
 for (i in 1:len){
   
     ## open NETcdf file, extract relevant information, and close the file
@@ -244,7 +169,10 @@ for (i in 1:len){
     day[i] <- list(rep(dy[1], length(N[[i]])))
     
 }
-## END for loop ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## END NETcdf for loop ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
 
 
 ## post-loop data processing ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -253,45 +181,40 @@ N.list <- na.omit(as.data.frame(unlist(N)))
 SE.list <- na.omit(as.data.frame(unlist(SE)))
 SW.list <- na.omit(as.data.frame(unlist(SW)))
 
-## Day and Year extraction and data processing grayed out for now 
-#NW.list <- as.data.frame(unlist(NW))
-#NW.list$logChlor <- log(NW.list[,1])
-#NW.day <- as.data.frame(unlist(day))
-#NW.year <- as.data.frame(unlist(year))
-#new_NW <- na.omit(cbind(NW.list, NW.day, NW.year))
-#names(new_NW)[1]<-"chlor"
-#names(new_NW)[3]<-"day" 
-#names(new_NW)[4]<-"year" 
-#new_NW$region <- "NorthWest"
-#head(new_NW)
 
 ## sample sizes
 len.N <- length(N.list[,1])
 len.SW <- length(SW.list[,1])
 len.SE <- length(SE.list[,1])
 
+
 ## minimum sample size
 sampleSize <- min(len.N, len.SW, len.SE)
+
 
 ## randomly sample from data.frames to ensure equal sample size
 North <- as.data.frame(sample(N.list[,1], sampleSize, replace = FALSE))
 SouthWest <- as.data.frame(sample(SW.list[,1], sampleSize, replace = FALSE))
 SouthEast <- as.data.frame(sample(SE.list[,1], sampleSize, replace = FALSE))
 
+
 ## rename column with chlorophyll values
 names(North)[1]<-"chlor" 
 names(SouthWest)[1]<-"chlor"
 names(SouthEast)[1]<-"chlor"
+
 
 ## log scale
 North$logChlor <- log10(North$chlor)
 SouthWest$logChlor <- log10(SouthWest$chlor)
 SouthEast$logChlor <- log10(SouthEast$chlor)
 
+
 ## add region column 
 North$region <- "North"
 SouthWest$region <- "SouthWest"
 SouthEast$region <- "SouthEast"
+
 
 ## bind into single data frame
 dat <- rbind(North, SouthWest, SouthEast)
@@ -302,7 +225,6 @@ dat <- rbind(North, SouthWest, SouthEast)
 
 
 ## plot on normal and log scale ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## set x and y lim here 
 ## single kernal density plot
 my.pal <- c("#7CAE0050", "#C77CFF50", "#F8766D50")
 
@@ -347,39 +269,36 @@ ks.test(SW_num, SE_num)
 
 
 ## Inverse CDF ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## calcuate empirical cumulative density function and extract and sort values
-N_ecdf <- data.frame(x=unique(North$logChlor), 
-                      y=ecdf(North$logChlor)(unique(North$logChlor))*length(North$logChlor))
-SW_ecdf <- data.frame(x=unique(SouthWest$logChlor), 
-                      y=ecdf(SouthWest$logChlor)(unique(SouthWest$logChlor))*length(SouthWest$logChlor))
-SE_ecdf <- data.frame(x=unique(SouthEast$logChlor), 
-                      y=ecdf(SouthEast$logChlor)(unique(SouthEast$logChlor))*length(SouthEast$logChlor))
+## t1 = calculate empirical cumulative density function values
+## t2 = rescale extracted cdf values to 0-1 scale
+## t3 = take the inverse of a cdf, such that the p(x) > or = log wave event
+ecdf.f <- function(dat, site.name){
+  t1 <- data.frame(x=unique(dat$logChlor), y=ecdf(dat$logChlor)(unique(dat$logChlor))*length(dat$logChlor))
+  t2 <- scale(t1$y, center=min(t1$y), scale=diff(range(t1$y)))
+  t3 <- ((t2 - max(t2)) * (-1))
+  t4 <- cbind(t1, t2, t3)
+  names(t4)[1:4]<-c("x", "unscaled_y", "y", "inv_y")
+  t4$Site <- site.name 
+  out <- return(t4)
+}
 
 
-## rescale extracted cdf values to 0-1 scale
-N_ecdf$y <- scale(N_ecdf$y, center=min(N_ecdf$y), scale=diff(range(N_ecdf$y)))
-SW_ecdf$y <- scale(SW_ecdf$y, center=min(SW_ecdf$y), scale=diff(range(SW_ecdf$y)))
-SE_ecdf$y <- scale(SE_ecdf$y, center=min(SE_ecdf$y), scale=diff(range(SE_ecdf$y)))
-
-
-## take the inverse of a cdf, such that the p(x) > or = log wave event
-N_ecdf$inv_y <- ((N_ecdf$y - max(N_ecdf$y)) * (-1))
-SW_ecdf$inv_y <- ((SW_ecdf$y - max(SW_ecdf$y)) * (-1))
-SE_ecdf$inv_y <- ((SE_ecdf$y - max(SE_ecdf$y)) * (-1))
-
-
-## add site name to new data frames
-N_ecdf$region <- "North"
-SW_ecdf$region <- "SouthWest"
-SE_ecdf$region <- "SouthEast"
+## perform calculations
+N_ecdf <- ecdf.f(NF, "North")
+SW_ecdf <- ecdf.f(WE, "SouthWest")
+SE_ecdf <- ecdf.f(Day, "SouthEast")
 
 
 ## combine cfd data frames into single df & and reorder sites in order to plot properly 
 dat_ecdf <- rbind(N_ecdf, SW_ecdf, SE_ecdf)
-dat_ecdf$region <- factor(dat_ecdf$region, levels=c("North", "SouthWest", "SouthEast"))
+dat_ecdf$Site <- factor(dat_ecdf$region, levels=c("North", "SouthWest", "SouthEast"))
+## END ecdf calculations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-## plot all 
+
+
+
+## inverse ecdf plots ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 p1 <- ggplot(dat_ecdf, aes(x, inv_y, color=region)) + my.theme +
   geom_line(lwd=1, alpha=.7) + 
   scale_color_manual(values=my.pal) +
@@ -388,7 +307,11 @@ p1 <- ggplot(dat_ecdf, aes(x, inv_y, color=region)) + my.theme +
 
 print(p1)
 ## End of plots~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## END OF SCRIPT ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
 
 
+
+
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## END OF SCRIPT ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
