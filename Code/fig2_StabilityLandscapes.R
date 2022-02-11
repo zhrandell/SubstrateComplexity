@@ -434,6 +434,15 @@ WEU.R3 <- pane.lab.R3("O")
 Day.R3 <- pane.lab.R3("P")
 ED.R3 <- pane.lab.R3("Q")
 WD.R3 <- pane.lab.R3("R")
+
+
+## colors reordered to match the ordering of transects by rugosity
+NF.rug.col <- scale_fill_manual(values=c("#9f1009", "#5b0905", "#e3170d", "#e9453d", "#f18b86")) #E3170D used for tint and shade creation
+WEK.rug.col <- scale_fill_manual(values=c("#b34700", "#662900", "#ff6600", "#ff8533", "#ffb380")) #FF6600 used for tint and shade creation
+WEU.rug.col <- scale_fill_manual(values=c("#665c00", "#ffe600", "#b3a100", "#332e00", "#fff380")) #FFE600 used for tint and shade creation
+Day.rug.col <- scale_fill_manual(values=c("#91c591", "#0a2a0a", "#228b22", "#4ea24e", "#145314"))
+ED.rug.col <- scale_fill_manual(values=c("#99c3d1", "#003446", "#3386a2", "#00536f", "#66a4b9")) #00688B used for tint and shade creation
+WD.rug.col <- scale_fill_manual(values=c("#d6adeb", "#b870dc", "#4d1967", "#7a28a4", "#a347d2")) #9932CD used for tint and shade creation
 ## END custom params ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -445,37 +454,37 @@ WD.R3 <- pane.lab.R3("R")
 p.NF <- ggplot(NF_rug, aes(SITE, mean)) +
   geom_errorbar(aes(x=TRANSECT, ymin=mean-se, ymax=mean+se), width=sd.width) +
   geom_point(aes(x=TRANSECT, y=mean, fill=TRANSECT), size = pt.size, shape=pt.shape, color=pt.col) +
-  theme_bw() + rug.theme + NF.fill + rug.y.scale + labs(y="Rugosity") + no.x.title + NF.R3  
+  theme_bw() + rug.theme + rug.y.scale + labs(y="Rugosity") + no.x.title + NF.rug.col + NF.R3 
 
 ## WestEnd Kelp 
 p.WEK <- ggplot(WEK_rug, aes(SITE, mean)) +
   geom_errorbar(aes(x=TRANSECT, ymin=mean-se, ymax=mean+se), width=sd.width) +
   geom_point(aes(x=TRANSECT, y=mean, fill=TRANSECT), size = pt.size, shape=pt.shape, color=pt.col) +
-  theme_bw() + rug.theme + WEK.fill + rug.y.scale + no.y.title + no.x.title + WEK.R3
+  theme_bw() + rug.theme + WEK.fill + rug.y.scale + no.y.title + no.x.title + WEK.rug.col + WEK.R3
 
 ## WestEnd Urchin
 p.WEU <- ggplot(WEU_rug, aes(SITE, mean)) +
   geom_errorbar(aes(x=TRANSECT, ymin=mean-se, ymax=mean+se), width=sd.width) +
   geom_point(aes(x=TRANSECT, y=mean, fill=TRANSECT), size = pt.size, shape=pt.shape, color=pt.col) +
-  theme_bw() + rug.theme + WEU.fill + rug.y.scale + no.y.title + xlab("Transect") + WEU.R3
+  theme_bw() + rug.theme + rug.y.scale + no.y.title + xlab("Transect") + WEU.rug.col + WEU.R3
 
 ## Daytona
 p.Day <- ggplot(Day_rug, aes(SITE, mean)) +
   geom_errorbar(aes(x=TRANSECT, ymin=mean-se, ymax=mean+se), width=sd.width) +
   geom_point(aes(x=TRANSECT, y=mean, fill=TRANSECT), size = pt.size, shape=pt.shape, color=pt.col) +
-  theme_bw() + rug.theme + Day.fill + rug.y.scale + no.y.title + no.x.title + Day.R3
+  theme_bw() + rug.theme + rug.y.scale + no.y.title + no.x.title + Day.rug.col + Day.R3
 
 ## East Dutch
 p.ED <- ggplot(ED_rug, aes(SITE, mean)) +
   geom_errorbar(aes(x=TRANSECT, ymin=mean-se, ymax=mean+se), width=sd.width) +
   geom_point(aes(x=TRANSECT, y=mean, fill=TRANSECT), size = pt.size, shape=pt.shape, color=pt.col) +
-  theme_bw() + rug.theme + ED.fill + rug.y.scale + no.y.title + no.x.title + ED.R3
+  theme_bw() + rug.theme + rug.y.scale + no.y.title + no.x.title + ED.rug.col + ED.R3
 
 ## West Dutch
 p.WD <- ggplot(WD_rug, aes(SITE, mean)) +
   geom_errorbar(aes(x=TRANSECT, ymin=mean-se, ymax=mean+se), width=sd.width) +
   geom_point(aes(x=TRANSECT, y=mean, fill=TRANSECT), size = pt.size, shape=pt.shape, color=pt.col) +
-  theme_bw() + rug.theme + WD.fill + rug.y.scale + no.y.title + no.x.title + WD.R3
+  theme_bw() + rug.theme + rug.y.scale + no.y.title + no.x.title + WD.rug.col + WD.R3
 ## END plots for fig2 row 3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
